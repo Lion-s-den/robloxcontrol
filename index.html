@@ -3,14 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2048</title>
+<title>Car Racer - 2 Player</title>
 <style>
   :root {
-    --bg: #faf8ef;
-    --grid-bg: #bbada0;
-    --cell-bg: rgba(238, 228, 218, 0.35);
-    --text-dark: #776e65;
-    --text-light: #f9f6f2;
+    --bg1: #1e1b4b;
+    --bg2: #4c1d95;
   }
   * { box-sizing: border-box; }
   body {
@@ -20,424 +17,391 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--bg);
+    background: linear-gradient(135deg, var(--bg1), var(--bg2));
     font-family: "Segoe UI", Verdana, Arial, sans-serif;
-    color: var(--text-dark);
-    padding: 20px;
-  }
-  .container {
-    width: 100%;
-    max-width: 460px;
-  }
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+    color: #fff;
+    padding: 16px;
   }
   h1 {
-    font-size: 48px;
-    margin: 0;
-    font-weight: bold;
-  }
-  .scores {
-    display: flex;
-    gap: 8px;
-  }
-  .score-box {
-    background: var(--grid-bg);
-    color: var(--text-light);
-    border-radius: 6px;
-    padding: 8px 16px;
+    margin: 0 0 4px 0;
+    font-size: 34px;
     text-align: center;
-    min-width: 70px;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #1dd1a1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: none;
   }
-  .score-box .label {
-    font-size: 12px;
-    text-transform: uppercase;
-    opacity: 0.8;
+  .subtitle {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+    opacity: 0.85;
   }
-  .score-box .value {
-    font-size: 20px;
-    font-weight: bold;
-  }
-  .top-bar {
+  .hud {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+    width: 100%;
+    max-width: 820px;
+    margin-bottom: 8px;
+    gap: 12px;
   }
-  .instructions {
-    font-size: 14px;
-    line-height: 1.4;
-    max-width: 260px;
-  }
-  button#new-game {
-    background: #8f7a66;
-    color: var(--text-light);
-    border: none;
-    border-radius: 6px;
-    padding: 10px 18px;
+  .player-box {
+    flex: 1;
+    border-radius: 10px;
+    padding: 8px 14px;
     font-weight: bold;
-    font-size: 14px;
-    cursor: pointer;
+    text-align: center;
   }
-  button#new-game:hover { background: #9c8b7b; }
-  .board-wrap {
+  .p1-box { background: rgba(72, 219, 251, 0.2); border: 2px solid #48dbfb; }
+  .p2-box { background: rgba(255, 107, 107, 0.2); border: 2px solid #ff6b6b; }
+  .player-box .name { font-size: 13px; opacity: 0.9; }
+  .player-box .score { font-size: 22px; }
+  .stage {
     position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    border: 3px solid rgba(255,255,255,0.15);
   }
-  .grid {
-    background: var(--grid-bg);
-    border-radius: 8px;
-    padding: 8px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 8px;
-    aspect-ratio: 1 / 1;
-  }
-  .cell-bg {
-    background: var(--cell-bg);
-    border-radius: 4px;
-  }
-  .tiles {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
-  }
-  .tile {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    font-weight: bold;
-    transition: top 0.1s ease, left 0.1s ease, transform 0.1s ease;
+  canvas {
+    display: block;
+    background: #333;
   }
   .overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(238, 228, 218, 0.73);
-    border-radius: 8px;
+    background: rgba(20, 15, 40, 0.88);
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    z-index: 10;
+    gap: 14px;
+    text-align: center;
+    padding: 20px;
   }
   .overlay.show { display: flex; }
-  .overlay .msg {
-    font-size: 40px;
+  .overlay .winner {
+    font-size: 38px;
     font-weight: bold;
-    color: var(--text-dark);
+    background: linear-gradient(90deg, #feca57, #ff9ff3, #48dbfb);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
-  .overlay button {
-    background: #8f7a66;
-    color: var(--text-light);
+  .overlay .detail { font-size: 16px; opacity: 0.9; }
+  button {
+    background: linear-gradient(90deg, #ff6b6b, #feca57);
+    color: #1e1b4b;
     border: none;
-    border-radius: 6px;
-    padding: 10px 18px;
+    border-radius: 8px;
+    padding: 12px 22px;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 15px;
     cursor: pointer;
+    margin-top: 4px;
   }
+  button:hover { filter: brightness(1.1); }
   footer {
-    margin-top: 16px;
+    margin-top: 12px;
     font-size: 13px;
     text-align: center;
-    color: var(--text-dark);
-    opacity: 0.8;
+    max-width: 820px;
+    opacity: 0.85;
+    line-height: 1.5;
+  }
+  .key {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    padding: 1px 7px;
+    margin: 0 2px;
+    font-weight: bold;
   }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="header">
-    <h1>2048</h1>
-    <div class="scores">
-      <div class="score-box">
-        <div class="label">Score</div>
-        <div class="value" id="score">0</div>
-      </div>
-      <div class="score-box">
-        <div class="label">Best</div>
-        <div class="value" id="best">0</div>
-      </div>
-    </div>
-  </div>
+<h1>🏎️ Turbo Racer</h1>
+<div class="subtitle">Dodge traffic, survive the road, rack up the highest score!</div>
 
-  <div class="top-bar">
-    <div class="instructions">Join the tiles, get to <strong>2048</strong>! Use arrow keys or swipe.</div>
-    <button id="new-game">New Game</button>
+<div class="hud">
+  <div class="player-box p1-box">
+    <div class="name">🔵 PLAYER 1 (Arrow Keys)</div>
+    <div class="score" id="p1-score">0</div>
   </div>
-
-  <div class="board-wrap">
-    <div class="grid" id="grid-bg"></div>
-    <div class="tiles" id="tiles"></div>
-    <div class="overlay" id="overlay">
-      <div class="msg" id="overlay-msg">Game Over!</div>
-      <button id="overlay-retry">Try Again</button>
-    </div>
+  <div class="player-box p2-box">
+    <div class="name">🔴 PLAYER 2 (W A S D)</div>
+    <div class="score" id="p2-score">0</div>
   </div>
-
-  <footer>Arrow keys / swipe to move. Combine matching tiles to reach 2048.</footer>
 </div>
+
+<div class="stage">
+  <canvas id="game" width="820" height="520"></canvas>
+  <div class="overlay" id="overlay">
+    <div class="winner" id="winner-text">Game Over!</div>
+    <div class="detail" id="detail-text"></div>
+    <button id="restart-btn">Race Again</button>
+  </div>
+</div>
+
+<footer>
+  <strong>Player 1 (blue car):</strong> <span class="key">←</span><span class="key">→</span> change lane, <span class="key">↑</span> boost<br>
+  <strong>Player 2 (red car):</strong> <span class="key">A</span><span class="key">D</span> change lane, <span class="key">W</span> boost<br>
+  Avoid the colorful obstacle cars — last racer standing (or highest score) wins!
+</footer>
 
 <script>
 (function () {
-  const SIZE = 4;
-  const gridBgEl = document.getElementById('grid-bg');
-  const tilesEl = document.getElementById('tiles');
-  const scoreEl = document.getElementById('score');
-  const bestEl = document.getElementById('best');
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const HALF = W / 2;
+  const ROAD_MARGIN = 20;
+  const LANES = 3;
+
   const overlayEl = document.getElementById('overlay');
-  const overlayMsgEl = document.getElementById('overlay-msg');
-  const overlayRetryEl = document.getElementById('overlay-retry');
-  const newGameBtn = document.getElementById('new-game');
+  const winnerTextEl = document.getElementById('winner-text');
+  const detailTextEl = document.getElementById('detail-text');
+  const restartBtn = document.getElementById('restart-btn');
+  const p1ScoreEl = document.getElementById('p1-score');
+  const p2ScoreEl = document.getElementById('p2-score');
 
-  let board, score, best, won, over, tileId;
+  const obstacleColors = ['#feca57', '#1dd1a1', '#ff9ff3', '#54a0ff', '#ee5253', '#a29bfe'];
 
-  const tileColors = {
-    2: ['#eee4da', '#776e65'],
-    4: ['#ede0c8', '#776e65'],
-    8: ['#f2b179', '#f9f6f2'],
-    16: ['#f59563', '#f9f6f2'],
-    32: ['#f67c5f', '#f9f6f2'],
-    64: ['#f65e3b', '#f9f6f2'],
-    128: ['#edcf72', '#f9f6f2'],
-    256: ['#edcc61', '#f9f6f2'],
-    512: ['#edc850', '#f9f6f2'],
-    1024: ['#edc53f', '#f9f6f2'],
-    2048: ['#edc22e', '#f9f6f2'],
-  };
-
-  function buildGridBg() {
-    gridBgEl.innerHTML = '';
-    for (let i = 0; i < SIZE * SIZE; i++) {
-      const c = document.createElement('div');
-      c.className = 'cell-bg';
-      gridBgEl.appendChild(c);
-    }
+  function laneX(sideOffset, roadWidth, laneIndex) {
+    const laneWidth = roadWidth / LANES;
+    return sideOffset + ROAD_MARGIN + laneWidth * laneIndex + laneWidth / 2;
   }
 
-  function loadBest() {
-    const v = localStorage.getItem('2048-best');
-    return v ? parseInt(v, 10) : 0;
-  }
-  function saveBest(v) {
-    try { localStorage.setItem('2048-best', v); } catch (e) {}
+  function makePlayer(side, color, keys) {
+    const sideOffset = side === 'left' ? 0 : HALF;
+    const roadWidth = HALF - ROAD_MARGIN * 2;
+    return {
+      side, color, keys,
+      lane: 1,
+      sideOffset,
+      roadWidth,
+      carW: 34, carH: 54,
+      x: laneX(sideOffset, roadWidth, 1),
+      y: H - 90,
+      alive: true,
+      score: 0,
+      boost: false,
+      speed: 4.2,
+      switchCooldown: 0,
+    };
   }
 
-  function emptyBoard() {
-    return Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
-  }
+  let p1, p2, obstacles, keysDown, running, spawnTimer, lastTime, roadLineOffset;
 
   function init() {
-    board = emptyBoard();
-    score = 0;
-    won = false;
-    over = false;
-    tileId = 1;
-    best = loadBest();
+    p1 = makePlayer('left', '#48dbfb', { left: 'ArrowLeft', right: 'ArrowRight', boost: 'ArrowUp' });
+    p2 = makePlayer('right', '#ff6b6b', { left: 'a', right: 'd', boost: 'w' });
+    obstacles = [];
+    keysDown = {};
+    running = true;
+    spawnTimer = 0;
+    roadLineOffset = 0;
+    lastTime = performance.now();
     overlayEl.classList.remove('show');
-    addRandomTile();
-    addRandomTile();
-    updateScore();
-    render();
+    p1ScoreEl.textContent = '0';
+    p2ScoreEl.textContent = '0';
+    requestAnimationFrame(loop);
   }
 
-  function addRandomTile() {
-    const empties = [];
-    for (let r = 0; r < SIZE; r++) {
-      for (let c = 0; c < SIZE; c++) {
-        if (!board[r][c]) empties.push([r, c]);
+  function spawnObstacle(player) {
+    const lane = Math.floor(Math.random() * LANES);
+    const x = laneX(player.sideOffset, player.roadWidth, lane);
+    const color = obstacleColors[Math.floor(Math.random() * obstacleColors.length)];
+    obstacles.push({
+      side: player.side,
+      lane, x, y: -70,
+      w: 32, h: 52,
+      color,
+      speed: 3 + Math.random() * 2.4,
+    });
+  }
+
+  function rectsOverlap(a, b) {
+    return Math.abs(a.x - b.x) < (a.w + b.w) / 2 - 8 &&
+           Math.abs(a.y - b.y) < (a.h + b.h) / 2 - 8;
+  }
+
+  function updatePlayer(player, dt) {
+    if (!player.alive) return;
+    if (player.switchCooldown > 0) player.switchCooldown -= dt;
+
+    if (keysDown[player.keys.left] && player.switchCooldown <= 0) {
+      if (player.lane > 0) { player.lane--; player.switchCooldown = 140; }
+    }
+    if (keysDown[player.keys.right] && player.switchCooldown <= 0) {
+      if (player.lane < LANES - 1) { player.lane++; player.switchCooldown = 140; }
+    }
+    player.boost = !!keysDown[player.keys.boost];
+
+    const targetX = laneX(player.sideOffset, player.roadWidth, player.lane);
+    player.x += (targetX - player.x) * 0.25;
+
+    const rate = player.boost ? 2.2 : 1;
+    player.score += rate * (dt / 16);
+  }
+
+  function updateObstacles(dt) {
+    const factor = dt / 16;
+    for (const o of obstacles) {
+      const boosted = (o.side === 'left' ? p1.boost : p2.boost);
+      o.y += o.speed * factor * (boosted ? 1.6 : 1);
+    }
+    obstacles = obstacles.filter(o => o.y < H + 80);
+
+    for (const o of obstacles) {
+      const player = o.side === 'left' ? p1 : p2;
+      if (player.alive && rectsOverlap(player, o)) {
+        player.alive = false;
       }
     }
-    if (empties.length === 0) return;
-    const [r, c] = empties[Math.floor(Math.random() * empties.length)];
-    const value = Math.random() < 0.9 ? 2 : 4;
-    board[r][c] = { id: tileId++, value, r, c, isNew: true, merged: false };
   }
 
-  function updateScore() {
-    scoreEl.textContent = score;
-    if (score > best) {
-      best = score;
-      saveBest(best);
+  function drawRoad(sideOffset, roadWidth, offset) {
+    const grad = ctx.createLinearGradient(sideOffset, 0, sideOffset, H);
+    grad.addColorStop(0, '#3d3d5c');
+    grad.addColorStop(1, '#232338');
+    ctx.fillStyle = grad;
+    ctx.fillRect(sideOffset, 0, roadWidth + ROAD_MARGIN * 2, H);
+
+    ctx.fillStyle = '#2ecc71';
+    ctx.fillRect(sideOffset, 0, ROAD_MARGIN, H);
+    ctx.fillRect(sideOffset + ROAD_MARGIN + roadWidth, 0, ROAD_MARGIN, H);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 4;
+    ctx.setLineDash([22, 20]);
+    for (let i = 1; i < LANES; i++) {
+      const x = sideOffset + ROAD_MARGIN + (roadWidth / LANES) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, -20 + offset);
+      ctx.lineTo(x, H);
+      ctx.stroke();
     }
-    bestEl.textContent = best;
+    ctx.setLineDash([]);
   }
 
-  function cellSize() {
-    const wrapWidth = gridBgEl.clientWidth;
-    const gap = 8;
-    const padding = 8;
-    return (wrapWidth - padding * 2 - gap * (SIZE - 1)) / SIZE;
+  function drawCar(x, y, w, h, color, alive) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.globalAlpha = alive ? 1 : 0.25;
+    ctx.fillStyle = color;
+    roundRect(-w/2, -h/2, w, h, 8);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    roundRect(-w/2 + 5, -h/2 + 8, w - 10, h/3, 4);
+    ctx.fill();
+    ctx.fillStyle = '#222';
+    ctx.fillRect(-w/2 - 3, -h/2 + 6, 4, 10);
+    ctx.fillRect(w/2 - 1, -h/2 + 6, 4, 10);
+    ctx.fillRect(-w/2 - 3, h/2 - 16, 4, 10);
+    ctx.fillRect(w/2 - 1, h/2 - 16, 4, 10);
+    ctx.restore();
   }
 
-  function render() {
-    tilesEl.innerHTML = '';
-    const size = cellSize();
-    const gap = 8;
-    for (let r = 0; r < SIZE; r++) {
-      for (let c = 0; c < SIZE; c++) {
-        const t = board[r][c];
-        if (!t) continue;
-        const el = document.createElement('div');
-        el.className = 'tile';
-        el.style.width = size + 'px';
-        el.style.height = size + 'px';
-        el.style.top = r * (size + gap) + 'px';
-        el.style.left = c * (size + gap) + 'px';
-        const [bg, fg] = tileColors[t.value] || ['#3c3a32', '#f9f6f2'];
-        el.style.background = bg;
-        el.style.color = fg;
-        el.style.fontSize = (t.value > 512 ? size * 0.32 : size * 0.4) + 'px';
-        el.textContent = t.value;
-        tilesEl.appendChild(el);
-      }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    drawRoad(p1.sideOffset, p1.roadWidth, roadLineOffset);
+    drawRoad(p2.sideOffset, p2.roadWidth, roadLineOffset);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(HALF - 2, 0, 4, H);
+
+    for (const o of obstacles) {
+      drawCar(o.x, o.y, o.w, o.h, o.color, true);
     }
+
+    drawCar(p1.x, p1.y, p1.carW, p1.carH, p1.color, p1.alive);
+    drawCar(p2.x, p2.y, p2.carW, p2.carH, p2.color, p2.alive);
+
+    p1ScoreEl.textContent = Math.floor(p1.score);
+    p2ScoreEl.textContent = Math.floor(p2.score);
   }
 
-  function cloneBoardValues() {
-    return board.map(row => row.map(t => (t ? t.value : null)));
-  }
-
-  function boardsEqual(a, b) {
-    for (let r = 0; r < SIZE; r++)
-      for (let c = 0; c < SIZE; c++)
-        if (a[r][c] !== b[r][c]) return false;
-    return true;
-  }
-
-  // Move logic: operate on lines (rows or columns), always sliding toward index 0 of the line
-  function moveLine(line) {
-    // line: array of tile objects or null, length SIZE
-    const filtered = line.filter(t => t !== null);
-    const merged = [];
-    let gained = 0;
-    for (let i = 0; i < filtered.length; i++) {
-      if (i < filtered.length - 1 && filtered[i].value === filtered[i + 1].value) {
-        const newValue = filtered[i].value * 2;
-        merged.push({ id: filtered[i].id, value: newValue, isNew: false, merged: true });
-        gained += newValue;
-        if (newValue === 2048) won = true;
-        i++; // skip next
-      } else {
-        merged.push({ id: filtered[i].id, value: filtered[i].value, isNew: false, merged: false });
-      }
-    }
-    while (merged.length < SIZE) merged.push(null);
-    return { line: merged, gained };
-  }
-
-  function move(direction) {
-    if (over) return;
-    const before = cloneBoardValues();
-    let totalGained = 0;
-
-    if (direction === 'left' || direction === 'right') {
-      for (let r = 0; r < SIZE; r++) {
-        let line = board[r].slice();
-        if (direction === 'right') line.reverse();
-        const { line: newLine, gained } = moveLine(line);
-        totalGained += gained;
-        if (direction === 'right') newLine.reverse();
-        for (let c = 0; c < SIZE; c++) {
-          const t = newLine[c];
-          board[r][c] = t ? { ...t, r, c } : null;
-        }
-      }
+  function endGame() {
+    running = false;
+    let msg, detail;
+    if (!p1.alive && !p2.alive) {
+      if (p1.score > p2.score) { msg = '🔵 Player 1 Wins!'; }
+      else if (p2.score > p1.score) { msg = '🔴 Player 2 Wins!'; }
+      else { msg = "It's a Tie!"; }
+      detail = `P1: ${Math.floor(p1.score)}  vs  P2: ${Math.floor(p2.score)}`;
+    } else if (!p1.alive) {
+      msg = '🔴 Player 2 Wins!';
+      detail = `P1 crashed! Final scores — P1: ${Math.floor(p1.score)}, P2: ${Math.floor(p2.score)}`;
     } else {
-      for (let c = 0; c < SIZE; c++) {
-        let line = [];
-        for (let r = 0; r < SIZE; r++) line.push(board[r][c]);
-        if (direction === 'down') line.reverse();
-        const { line: newLine, gained } = moveLine(line);
-        totalGained += gained;
-        if (direction === 'down') newLine.reverse();
-        for (let r = 0; r < SIZE; r++) {
-          const t = newLine[r];
-          board[r][c] = t ? { ...t, r, c } : null;
-        }
-      }
+      msg = '🔵 Player 1 Wins!';
+      detail = `P2 crashed! Final scores — P1: ${Math.floor(p1.score)}, P2: ${Math.floor(p2.score)}`;
     }
-
-    const after = cloneBoardValues();
-    if (!boardsEqual(before, after)) {
-      score += totalGained;
-      updateScore();
-      addRandomTile();
-      render();
-      if (won) {
-        showOverlay('You Win!');
-        won = false; // allow continued play if desired; overlay lets them retry
-      } else if (!canMove()) {
-        over = true;
-        showOverlay('Game Over!');
-      }
-    }
-  }
-
-  function canMove() {
-    for (let r = 0; r < SIZE; r++) {
-      for (let c = 0; c < SIZE; c++) {
-        if (!board[r][c]) return true;
-        const v = board[r][c].value;
-        if (c < SIZE - 1 && board[r][c + 1] && board[r][c + 1].value === v) return true;
-        if (r < SIZE - 1 && board[r + 1][c] && board[r + 1][c].value === v) return true;
-      }
-    }
-    return false;
-  }
-
-  function showOverlay(msg) {
-    overlayMsgEl.textContent = msg;
+    winnerTextEl.textContent = msg;
+    detailTextEl.textContent = detail;
     overlayEl.classList.add('show');
   }
 
-  // Keyboard controls
-  document.addEventListener('keydown', (e) => {
-    const map = {
-      ArrowLeft: 'left',
-      ArrowRight: 'right',
-      ArrowUp: 'up',
-      ArrowDown: 'down',
-    };
-    if (map[e.key]) {
+  function loop(now) {
+    if (!running) return;
+    const dt = Math.min(now - lastTime, 40);
+    lastTime = now;
+
+    roadLineOffset = (roadLineOffset + dt * 0.3) % 40;
+
+    updatePlayer(p1, dt);
+    updatePlayer(p2, dt);
+
+    spawnTimer += dt;
+    const spawnRate = 550;
+    if (spawnTimer > spawnRate) {
+      spawnTimer = 0;
+      if (p1.alive) spawnObstacle(p1);
+      if (p2.alive) spawnObstacle(p2);
+    }
+
+    updateObstacles(dt);
+    draw();
+
+    if (!p1.alive || !p2.alive) {
+      // give one more frame then end if either crashed and hasn't already ended
+      if (!p1.alive && !p2.alive) {
+        endGame();
+        return;
+      }
+      // allow the surviving player to keep racing until also crashing OR end immediately when one crashes
+      endGame();
+      return;
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    keysDown[e.key] = true;
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
       e.preventDefault();
-      move(map[e.key]);
     }
   });
+  window.addEventListener('keyup', (e) => {
+    keysDown[e.key] = false;
+  });
 
-  // Touch / swipe controls
-  let touchStartX = 0, touchStartY = 0;
-  document.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
+  restartBtn.addEventListener('click', init);
 
-  document.addEventListener('touchend', (e) => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    const absDx = Math.abs(dx), absDy = Math.abs(dy);
-    if (Math.max(absDx, absDy) < 20) return;
-    if (absDx > absDy) {
-      move(dx > 0 ? 'right' : 'left');
-    } else {
-      move(dy > 0 ? 'down' : 'up');
-    }
-  }, { passive: true });
-
-  newGameBtn.addEventListener('click', init);
-  overlayRetryEl.addEventListener('click', init);
-  window.addEventListener('resize', render);
-
-  buildGridBg();
   init();
 })();
 </script>
