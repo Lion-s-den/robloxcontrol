@@ -30,7 +30,6 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    text-shadow: none;
   }
   .subtitle {
     text-align: center;
@@ -170,6 +169,78 @@
 
   const obstacleColors = ['#feca57', '#1dd1a1', '#ff9ff3', '#54a0ff', '#ee5253', '#a29bfe'];
 
+  // --- AUDIO SYNTHESIZER ---
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playLaneSwitchSound() {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+  }
+
+  function playCrashSound() {
+    if (!audioCtx) return;
+    const bufferSize = audioCtx.sampleRate * 0.4;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    const whiteNoise = audioCtx.createBufferSource();
+    whiteNoise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+    filter.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.4);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+    whiteNoise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    whiteNoise.start();
+  }
+
+  function playGameOverSound() {
+    if (!audioCtx) return;
+    const notes = [261.63, 329.63, 392.00, 523.25];
+    notes.forEach((freq, idx) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const startTime = audioCtx.currentTime + idx * 0.1;
+      gain.gain.setValueAtTime(0.2, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.3);
+    });
+  }
+
+  // --- GAME LOGIC ---
   function laneX(sideOffset, roadWidth, laneIndex) {
     const laneWidth = roadWidth / LANES;
     return sideOffset + ROAD_MARGIN + laneWidth * laneIndex + laneWidth / 2;
@@ -197,7 +268,7 @@
   let p1, p2, obstacles, keysDown, running, spawnTimer, lastTime, roadLineOffset;
 
   function init() {
-    p1 = makePlayer('left', '#48dbfb', { left: 'ArrowLeft', right: 'ArrowRight', boost: 'ArrowUp' });
+    p1 = makePlayer('left', '#48dbfb', { left: 'arrowleft', right: 'arrowright', boost: 'arrowup' });
     p2 = makePlayer('right', '#ff6b6b', { left: 'a', right: 'd', boost: 'w' });
     obstacles = [];
     keysDown = {};
@@ -234,10 +305,18 @@
     if (player.switchCooldown > 0) player.switchCooldown -= dt;
 
     if (keysDown[player.keys.left] && player.switchCooldown <= 0) {
-      if (player.lane > 0) { player.lane--; player.switchCooldown = 140; }
+      if (player.lane > 0) {
+        player.lane--;
+        player.switchCooldown = 140;
+        playLaneSwitchSound();
+      }
     }
     if (keysDown[player.keys.right] && player.switchCooldown <= 0) {
-      if (player.lane < LANES - 1) { player.lane++; player.switchCooldown = 140; }
+      if (player.lane < LANES - 1) {
+        player.lane++;
+        player.switchCooldown = 140;
+        playLaneSwitchSound();
+      }
     }
     player.boost = !!keysDown[player.keys.boost];
 
@@ -260,6 +339,7 @@
       const player = o.side === 'left' ? p1 : p2;
       if (player.alive && rectsOverlap(player, o)) {
         player.alive = false;
+        playCrashSound();
       }
     }
   }
@@ -337,19 +417,21 @@
 
   function endGame() {
     running = false;
+    playGameOverSound();
+
     let msg, detail;
-    if (!p1.alive && !p2.alive) {
-      if (p1.score > p2.score) { msg = '🔵 Player 1 Wins!'; }
-      else if (p2.score > p1.score) { msg = '🔴 Player 2 Wins!'; }
-      else { msg = "It's a Tie!"; }
-      detail = `P1: ${Math.floor(p1.score)}  vs  P2: ${Math.floor(p2.score)}`;
-    } else if (!p1.alive) {
-      msg = '🔴 Player 2 Wins!';
-      detail = `P1 crashed! Final scores — P1: ${Math.floor(p1.score)}, P2: ${Math.floor(p2.score)}`;
-    } else {
+    const p1Score = Math.floor(p1.score);
+    const p2Score = Math.floor(p2.score);
+
+    if (p1Score > p2Score) {
       msg = '🔵 Player 1 Wins!';
-      detail = `P2 crashed! Final scores — P1: ${Math.floor(p1.score)}, P2: ${Math.floor(p2.score)}`;
+    } else if (p2Score > p1Score) {
+      msg = '🔴 Player 2 Wins!';
+    } else {
+      msg = "It's a Tie!";
     }
+    
+    detail = `Final Scores — P1: ${p1Score} | P2: ${p2Score}`;
     winnerTextEl.textContent = msg;
     detailTextEl.textContent = detail;
     overlayEl.classList.add('show');
@@ -376,13 +458,7 @@
     updateObstacles(dt);
     draw();
 
-    if (!p1.alive || !p2.alive) {
-      // give one more frame then end if either crashed and hasn't already ended
-      if (!p1.alive && !p2.alive) {
-        endGame();
-        return;
-      }
-      // allow the surviving player to keep racing until also crashing OR end immediately when one crashes
+    if (!p1.alive && !p2.alive) {
       endGame();
       return;
     }
@@ -391,16 +467,22 @@
   }
 
   window.addEventListener('keydown', (e) => {
-    keysDown[e.key] = true;
-    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
+    initAudio(); // Audio context initializes on first keypress
+    const key = e.key.toLowerCase();
+    keysDown[key] = true;
+    if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'w', 'a', 's', 'd'].includes(key)) {
       e.preventDefault();
     }
   });
+
   window.addEventListener('keyup', (e) => {
-    keysDown[e.key] = false;
+    keysDown[e.key.toLowerCase()] = false;
   });
 
-  restartBtn.addEventListener('click', init);
+  restartBtn.addEventListener('click', () => {
+    initAudio();
+    init();
+  });
 
   init();
 })();
