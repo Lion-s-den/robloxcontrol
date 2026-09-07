@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Supercar Stage Racer - 2 Player</title>
+<title>3D Supercar Championship - Official Code</title>
 <style>
   :root {
     --bg1: #090d16;
@@ -42,7 +42,7 @@
   }
   .hud {
     display: flex;
-    justify-content: space-between;
+    justify-space: between;
     width: 100%;
     max-width: 860px;
     margin-bottom: 8px;
@@ -150,7 +150,7 @@
     border-color: var(--accent);
   }
   .overlay .winner-title {
-    font-size: 38px;
+    font-size: 36px;
     font-weight: 800;
     background: linear-gradient(90deg, #feca57, #ff9ff3, #48dbfb);
     -webkit-background-clip: text;
@@ -204,8 +204,8 @@
 </head>
 <body>
 
-<h1>🏎️ 3D Supercar Stage Championship</h1>
-<div class="subtitle">Complete stages to claim Wins. Dodge obstacles to gain points. Avoid crashing!</div>
+<h1>🏎️ 3D Supercar Championship</h1>
+<div class="subtitle">Reach 1,000 Points to win a Stage. Dodging grants points. Crashing resets your score to 0!</div>
 
 <div class="hud">
   <div class="player-card p1-card">
@@ -234,27 +234,27 @@
     <div class="form-group">
       <div class="field-box">
         <label for="p1-input">What's your name, Player 1? (Lamborghini)</label>
-        <input type="text" id="p1-input" placeholder="Enter P1 Name" maxlength="12" value="Lamborghini Driver">
+        <input type="text" id="p1-input" placeholder="Enter P1 Name" maxlength="12" value="Lambo Driver">
       </div>
       <div class="field-box">
         <label for="p2-input">What's your name, Player 2? (Bugatti)</label>
         <input type="text" id="p2-input" placeholder="Enter P2 Name" maxlength="12" value="Bugatti Driver">
       </div>
     </div>
-    <button id="start-game-btn">Start Championship</button>
+    <button id="start-game-btn">Start Race</button>
   </div>
 
   <div class="overlay hidden" id="gameover-overlay">
-    <div class="winner-title" id="winner-title-text">Stage Finished!</div>
+    <div class="winner-title" id="winner-title-text">Stage Clear!</div>
     <div class="summary" id="summary-text"></div>
     <button id="restart-btn">Play Next Stage</button>
   </div>
 </div>
 
 <footer>
-  <strong>P1 Controls (Lambo):</strong> <span class="key">←</span><span class="key">→</span> change lane, <span class="key">↑</span> turbo boost<br>
-  <strong>P2 Controls (Bugatti):</strong> <span class="key">A</span><span class="key">D</span> change lane, <span class="key">W</span> turbo boost<br>
-  Reach <strong>50 points</strong> to pass a stage and earn <strong>1 Win</strong>. A crash loses points and resets stage progress to <strong>0 Wins</strong>!
+  <strong>P1 Controls (Lambo):</strong> <span class="key">←</span><span class="key">→</span> change lane, <span class="key">↑</span> boost<br>
+  <strong>P2 Controls (Bugatti):</strong> <span class="key">A</span><span class="key">D</span> change lane, <span class="key">W</span> boost<br>
+  First player to hit <strong>1,000 Points</strong> completes the stage and claims <strong>1 Win</strong>. Crashing resets your score back to <strong>0</strong>!
 </footer>
 
 <script>
@@ -265,7 +265,7 @@
   const HALF = W / 2;
   const ROAD_MARGIN = 20;
   const LANES = 3;
-  const STAGE_GOAL = 50; // Points required to finish a stage
+  const STAGE_GOAL = 1000; // Requirement: 1,000 Points to Win Stage
 
   // DOM Elements
   const nameOverlay = document.getElementById('name-overlay');
@@ -322,8 +322,8 @@
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.05); // E5
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.05); 
     gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
     osc.connect(gain);
@@ -376,7 +376,7 @@
     });
   }
 
-  // --- GAME COMPUTATION & MODELS ---
+  // --- GAME COMPUTATION & LOGIC ---
   function laneX(sideOffset, roadWidth, laneIndex) {
     const laneWidth = roadWidth / LANES;
     return sideOffset + ROAD_MARGIN + laneWidth * laneIndex + laneWidth / 2;
@@ -479,10 +479,10 @@
     const targetX = laneX(player.sideOffset, player.roadWidth, player.lane);
     player.x += (targetX - player.x) * 0.25;
 
-    // Check Stage Clear Goal
+    // Check Stage Goal (1,000 Points)
     if (player.score >= STAGE_GOAL && !player.stageCleared) {
       player.stageCleared = true;
-      player.wins += 1; // 1 Stage Clear = 1 Win
+      player.wins += 1; // Stage clear grants 1 Win
       playStageWinSound();
       finishStage(player);
     }
@@ -496,22 +496,19 @@
 
       const player = o.side === 'left' ? p1 : p2;
 
-      // Dodged Obstacle Score
+      // Score points when successfully dodging a car
       if (!o.passed && !o.hit && o.y > player.y + player.carH / 2) {
         o.passed = true;
-        player.score += 2; // Dodging 1 car gives points
+        player.score += 10; // Gaining points for dodging cars
         playDodgeScoreSound();
       }
 
-      // Collision Check
+      // CRASH RULE: Touch another car = Score instantly resets to 0
       if (!o.hit && rectsOverlap(player, o)) {
         o.hit = true;
         playCrashSound();
 
-        // Crashing penalties: Lose points & Reset Wins for this stage attempt
-        const penalty = Math.floor(Math.random() * 9) + 2; 
-        player.score = Math.max(0, player.score - penalty);
-        player.wins = 0; // 0 Wins on crash
+        player.score = 0; // CRASH PENALTY: Score goes straight back to 0!
         player.hitCooldown = 350;
       }
     }
@@ -519,28 +516,28 @@
     obstacles = obstacles.filter(o => o.y < H + 100);
   }
 
-  // --- DETAILED 3D CAR RENDERERS ---
+  // --- 3D RENDERING PIPELINE ---
 
-  // Detailed 3D Lamborghini Renderer
+  // 3D Lamborghini Model
   function drawLamborghini3D(x, y, w, h, hit) {
     ctx.save();
     ctx.translate(x, y);
     if (hit) ctx.globalAlpha = 0.45;
 
-    // 3D Ground Shadow
+    // Drop Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.beginPath();
     ctx.ellipse(3, 8, w / 1.6, h / 1.7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Wheels (3D Extruded)
+    // Wheels
     ctx.fillStyle = '#090d16';
     ctx.fillRect(-w/2 - 4, -h/3, 5, 14);
     ctx.fillRect(w/2 - 1, -h/3, 5, 14);
     ctx.fillRect(-w/2 - 4, h/4, 5, 14);
     ctx.fillRect(w/2 - 1, h/4, 5, 14);
 
-    // Main Chassis - Sharp Metallic Cyan Gradient
+    // Main Body - Cyan Wedge
     const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
     bodyGrad.addColorStop(0, '#0284c7');
     bodyGrad.addColorStop(0.3, '#38bdf8');
@@ -549,7 +546,7 @@
     ctx.fillStyle = bodyGrad;
 
     ctx.beginPath();
-    ctx.moveTo(0, -h/2); // Wedge nose
+    ctx.moveTo(0, -h/2);
     ctx.lineTo(w/2 - 2, -h/3);
     ctx.lineTo(w/2, h/2 - 6);
     ctx.lineTo(w/2 - 6, h/2);
@@ -559,11 +556,11 @@
     ctx.closePath();
     ctx.fill();
 
-    // Carbon Rear Spoiler
+    // Spoiler
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(-w/2 + 2, h/2 - 4, w - 4, 5);
 
-    // 3D Angled Cabin Hood
+    // 3D Cabin Roof
     const cabinGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
     cabinGrad.addColorStop(0, '#0f172a');
     cabinGrad.addColorStop(1, '#1e293b');
@@ -577,7 +574,7 @@
     ctx.closePath();
     ctx.fill();
 
-    // Windshield Metallic Sheen
+    // Windshield Refraction
     ctx.fillStyle = 'rgba(56, 189, 248, 0.7)';
     ctx.beginPath();
     ctx.moveTo(0, -h/3.5 + 3);
@@ -586,7 +583,7 @@
     ctx.closePath();
     ctx.fill();
 
-    // Aggressive LED Headlights
+    // Headlights
     ctx.fillStyle = '#fef08a';
     ctx.beginPath();
     ctx.moveTo(-w/2 + 6, -h/2 + 8);
@@ -603,13 +600,13 @@
     ctx.restore();
   }
 
-  // Detailed 3D Bugatti Renderer
+  // 3D Bugatti Model
   function drawBugatti3D(x, y, w, h, hit) {
     ctx.save();
     ctx.translate(x, y);
     if (hit) ctx.globalAlpha = 0.45;
 
-    // 3D Shadow
+    // Drop Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.beginPath();
     ctx.ellipse(3, 8, w / 1.6, h / 1.7, 0, 0, Math.PI * 2);
@@ -622,7 +619,7 @@
     ctx.fillRect(-w/2 - 4, h/4, 5, 14);
     ctx.fillRect(w/2 - 1, h/4, 5, 14);
 
-    // Deep Crimson Metallic Body
+    // Crimson Body
     const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
     bodyGrad.addColorStop(0, '#7f1d1d');
     bodyGrad.addColorStop(0.3, '#dc2626');
@@ -634,13 +631,13 @@
     ctx.roundRect(-w/2, -h/2, w, h, [14, 14, 10, 10]);
     ctx.fill();
 
-    // Signature Bugatti Horseshoe Grille
+    // Bugatti Horseshoe Grille
     ctx.fillStyle = '#020617';
     ctx.beginPath();
     ctx.arc(0, -h/2 + 6, 7, 0, Math.PI);
     ctx.fill();
 
-    // Black C-Shaped Side Curves
+    // Side Curves
     ctx.fillStyle = '#020617';
     ctx.beginPath();
     ctx.arc(-w/2 + 3, 0, h/3.2, -Math.PI/2, Math.PI/2);
@@ -649,7 +646,7 @@
     ctx.arc(w/2 - 3, 0, h/3.2, Math.PI/2, -Math.PI/2);
     ctx.fill();
 
-    // 3D Canopy/Roof
+    // Glass Roof
     const roofGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
     roofGrad.addColorStop(0, '#0f172a');
     roofGrad.addColorStop(1, '#334155');
@@ -658,7 +655,7 @@
     ctx.roundRect(-w/3.2, -h/3.8, (w*2)/3.2, h/2, 8);
     ctx.fill();
 
-    // Quad Headlight Bar
+    // Light Strip
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(-w/2 + 6, -h/2 + 3, 10, 3);
     ctx.fillRect(w/2 - 16, -h/2 + 3, 10, 3);
@@ -666,22 +663,19 @@
     ctx.restore();
   }
 
-  // Traffic Obstacle Cars
+  // Traffic Cars
   function drawObstacle3D(x, y, w, h, color) {
     ctx.save();
     ctx.translate(x, y);
 
-    // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.fillRect(-w/2 + 3, -h/2 + 5, w, h);
 
-    // Main Body
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.roundRect(-w/2, -h/2, w, h, 8);
     ctx.fill();
 
-    // Roof Glass
     ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
     ctx.fillRect(-w/3, -h/5, (w*2)/3, h/2.2);
 
@@ -695,12 +689,10 @@
     ctx.fillStyle = grad;
     ctx.fillRect(sideOffset, 0, roadWidth + ROAD_MARGIN * 2, H);
 
-    // Green Curbs
     ctx.fillStyle = '#10b981';
     ctx.fillRect(sideOffset, 0, ROAD_MARGIN, H);
     ctx.fillRect(sideOffset + ROAD_MARGIN + roadWidth, 0, ROAD_MARGIN, H);
 
-    // Dotted Lane Markings
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
     ctx.lineWidth = 4;
     ctx.setLineDash([26, 22]);
@@ -720,16 +712,13 @@
     drawRoad(p1.sideOffset, p1.roadWidth, roadLineOffset);
     drawRoad(p2.sideOffset, p2.roadWidth, roadLineOffset);
 
-    // Dividing Line
     ctx.fillStyle = '#000';
     ctx.fillRect(HALF - 3, 0, 6, H);
 
-    // Draw Obstacles
     for (const o of obstacles) {
       drawObstacle3D(o.x, o.y, o.w, o.h, o.color);
     }
 
-    // Draw Player Supercars
     drawLamborghini3D(p1.x, p1.y, p1.carW, p1.carH, p1.hitCooldown > 0);
     drawBugatti3D(p2.x, p2.y, p2.carW, p2.carH, p2.hitCooldown > 0);
 
@@ -751,13 +740,12 @@
     
     winnerTitleText.textContent = `🏆 ${winner.name} Cleared Stage ${winner.stage}!`;
     summaryText.innerHTML = `
-      <strong>${winner.name}</strong> reached ${STAGE_GOAL} points and earned <strong>1 Win!</strong><br><br>
-      Total Championship Wins:<br>
+      <strong>${winner.name}</strong> reached <strong>1,000 points</strong> and won the stage!<br><br>
+      Total Stage Victories:<br>
       🔵 ${p1.name}: <strong>${p1.wins} Win(s)</strong><br>
       🔴 ${p2.name}: <strong>${p2.wins} Win(s)</strong>
     `;
 
-    // Advance Stage Number & reset round points
     p1.stage += 1;
     p2.stage += 1;
     p1.score = 0;
