@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Supercar Racer - 2 Player</title>
+<title>3D Supercar Stage Racer - 2 Player</title>
 <style>
   :root {
-    --bg1: #0f172a;
+    --bg1: #090d16;
     --bg2: #1e1b4b;
+    --accent: #feca57;
   }
   * { box-sizing: border-box; }
   body {
@@ -18,128 +19,184 @@
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, var(--bg1), var(--bg2));
-    font-family: "Segoe UI", Verdana, Arial, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     color: #fff;
-    padding: 16px;
+    padding: 12px;
   }
   h1 {
     margin: 0 0 4px 0;
-    font-size: 34px;
+    font-size: 32px;
     text-align: center;
     background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #1dd1a1);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    text-shadow: 0 0 20px rgba(254, 202, 87, 0.3);
   }
   .subtitle {
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-size: 14px;
     opacity: 0.85;
+    letter-spacing: 0.5px;
   }
   .hud {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    max-width: 820px;
+    max-width: 860px;
     margin-bottom: 8px;
-    gap: 12px;
+    gap: 14px;
   }
-  .player-box {
+  .player-card {
     flex: 1;
-    border-radius: 10px;
-    padding: 8px 14px;
+    border-radius: 12px;
+    padding: 10px 16px;
     font-weight: bold;
     text-align: center;
-    transition: transform 0.1s ease;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, border-color 0.2s ease;
   }
-  .p1-box { background: rgba(72, 219, 251, 0.2); border: 2px solid #48dbfb; }
-  .p2-box { background: rgba(255, 107, 107, 0.2); border: 2px solid #ff6b6b; }
-  .player-box .name { font-size: 14px; opacity: 0.95; letter-spacing: 0.5px; }
-  .player-box .score { font-size: 24px; margin-top: 2px; }
-  .stage {
+  .p1-card { border: 2px solid #48dbfb; }
+  .p2-card { border: 2px solid #ff6b6b; }
+  .player-card .name-tag {
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .p1-card .name-tag { color: #48dbfb; }
+  .p2-card .name-tag { color: #ff6b6b; }
+  
+  .stats-row {
+    display: flex;
+    justify-content: space-around;
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 4px;
+  }
+  .stats-row span strong {
+    font-size: 16px;
+    color: var(--accent);
+  }
+
+  .stage-box {
     position: relative;
-    border-radius: 14px;
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-    border: 3px solid rgba(255,255,255,0.15);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    border: 3px solid rgba(255,255,255,0.12);
   }
   canvas {
     display: block;
-    background: #1e293b;
+    background: #111827;
   }
+
   .overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(15, 23, 42, 0.92);
+    background: rgba(9, 13, 22, 0.94);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 16px;
     text-align: center;
-    padding: 20px;
+    padding: 24px;
     z-index: 10;
   }
   .overlay.hidden { display: none; }
   .overlay h2 {
-    font-size: 28px;
+    font-size: 26px;
     margin: 0;
-    color: #feca57;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
-  .input-group {
+  .form-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
-    max-width: 320px;
+    max-width: 340px;
   }
-  .input-group input {
-    padding: 10px 14px;
-    border-radius: 6px;
+  .field-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .field-box label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+  }
+  .field-box input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.08);
     color: #fff;
     font-size: 15px;
-    text-align: center;
-    outline: none;
-  }
-  .input-group input::placeholder { color: #94a3b8; }
-  .overlay .winner {
-    font-size: 36px;
     font-weight: bold;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .field-box input:focus {
+    border-color: var(--accent);
+  }
+  .overlay .winner-title {
+    font-size: 38px;
+    font-weight: 800;
     background: linear-gradient(90deg, #feca57, #ff9ff3, #48dbfb);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  .overlay .detail { font-size: 16px; opacity: 0.9; }
+  .overlay .summary {
+    font-size: 15px;
+    line-height: 1.6;
+    max-width: 400px;
+    opacity: 0.9;
+  }
   button {
     background: linear-gradient(90deg, #ff6b6b, #feca57);
-    color: #1e1b4b;
+    color: #0f172a;
     border: none;
     border-radius: 8px;
-    padding: 12px 24px;
-    font-weight: bold;
-    font-size: 16px;
+    padding: 12px 28px;
+    font-weight: 800;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     cursor: pointer;
-    margin-top: 6px;
+    margin-top: 8px;
+    box-shadow: 0 4px 15px rgba(254, 202, 87, 0.3);
+    transition: transform 0.15s ease, filter 0.15s ease;
   }
-  button:hover { filter: brightness(1.15); }
+  button:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+  }
+
   footer {
-    margin-top: 12px;
-    font-size: 13px;
+    margin-top: 10px;
+    font-size: 12px;
     text-align: center;
-    max-width: 820px;
-    opacity: 0.85;
+    max-width: 860px;
+    opacity: 0.8;
     line-height: 1.5;
   }
   .key {
     display: inline-block;
     background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.25);
     border-radius: 4px;
-    padding: 1px 7px;
+    padding: 1px 6px;
     margin: 0 2px;
     font-weight: bold;
   }
@@ -147,71 +204,93 @@
 </head>
 <body>
 
-<h1>🏎️ Supercar Showdown</h1>
-<div class="subtitle">Lamborghini vs Bugatti — Dodge traffic, hold boost, survive the road!</div>
+<h1>🏎️ 3D Supercar Stage Championship</h1>
+<div class="subtitle">Complete stages to claim Wins. Dodge obstacles to gain points. Avoid crashing!</div>
 
 <div class="hud">
-  <div class="player-box p1-box">
-    <div class="name" id="p1-display-name">🔵 Player 1 (Lamborghini)</div>
-    <div class="score" id="p1-score">0</div>
+  <div class="player-card p1-card">
+    <div class="name-tag" id="p1-display-name">🔵 Player 1 (Lamborghini)</div>
+    <div class="stats-row">
+      <span>Score: <strong id="p1-score">0</strong></span>
+      <span>Stage: <strong id="p1-stage">1</strong></span>
+      <span>Wins: <strong id="p1-wins">0</strong></span>
+    </div>
   </div>
-  <div class="player-box p2-box">
-    <div class="name" id="p2-display-name">🔴 Player 2 (Bugatti)</div>
-    <div class="score" id="p2-score">0</div>
+  <div class="player-card p2-card">
+    <div class="name-tag" id="p2-display-name">🔴 Player 2 (Bugatti)</div>
+    <div class="stats-row">
+      <span>Score: <strong id="p2-score">0</strong></span>
+      <span>Stage: <strong id="p2-stage">1</strong></span>
+      <span>Wins: <strong id="p2-wins">0</strong></span>
+    </div>
   </div>
 </div>
 
-<div class="stage">
-  <canvas id="game" width="820" height="520"></canvas>
-  
-  <div class="overlay" id="start-overlay">
+<div class="stage-box">
+  <canvas id="game" width="860" height="540"></canvas>
+
+  <div class="overlay" id="name-overlay">
     <h2>Driver Registration</h2>
-    <div class="input-group">
-      <input type="text" id="p1-name-input" placeholder="Player 1 Name (Lamborghini)" maxlength="15" value="Lambo Driver">
-      <input type="text" id="p2-name-input" placeholder="Player 2 Name (Bugatti)" maxlength="15" value="Bugatti Driver">
+    <div class="form-group">
+      <div class="field-box">
+        <label for="p1-input">What's your name, Player 1? (Lamborghini)</label>
+        <input type="text" id="p1-input" placeholder="Enter P1 Name" maxlength="12" value="Lamborghini Driver">
+      </div>
+      <div class="field-box">
+        <label for="p2-input">What's your name, Player 2? (Bugatti)</label>
+        <input type="text" id="p2-input" placeholder="Enter P2 Name" maxlength="12" value="Bugatti Driver">
+      </div>
     </div>
-    <button id="start-btn">Start Race</button>
+    <button id="start-game-btn">Start Championship</button>
   </div>
 
   <div class="overlay hidden" id="gameover-overlay">
-    <div class="winner" id="winner-text">Game Over!</div>
-    <div class="detail" id="detail-text"></div>
-    <button id="restart-btn">Race Again</button>
+    <div class="winner-title" id="winner-title-text">Stage Finished!</div>
+    <div class="summary" id="summary-text"></div>
+    <button id="restart-btn">Play Next Stage</button>
   </div>
 </div>
 
 <footer>
-  <strong>P1 (Lamborghini):</strong> <span class="key">←</span><span class="key">→</span> lanes, <span class="key">↑</span> boost<br>
-  <strong>P2 (Bugatti):</strong> <span class="key">A</span><span class="key">D</span> lanes, <span class="key">W</span> boost<br>
-  Crashing loses <strong>2 to 10 points</strong> instantly. Highest score wins when time runs out!
+  <strong>P1 Controls (Lambo):</strong> <span class="key">←</span><span class="key">→</span> change lane, <span class="key">↑</span> turbo boost<br>
+  <strong>P2 Controls (Bugatti):</strong> <span class="key">A</span><span class="key">D</span> change lane, <span class="key">W</span> turbo boost<br>
+  Reach <strong>50 points</strong> to pass a stage and earn <strong>1 Win</strong>. A crash loses points and resets stage progress to <strong>0 Wins</strong>!
 </footer>
 
 <script>
-(function () {
+(function() {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const HALF = W / 2;
   const ROAD_MARGIN = 20;
   const LANES = 3;
+  const STAGE_GOAL = 50; // Points required to finish a stage
 
-  const startOverlay = document.getElementById('start-overlay');
+  // DOM Elements
+  const nameOverlay = document.getElementById('name-overlay');
   const gameoverOverlay = document.getElementById('gameover-overlay');
-  const startBtn = document.getElementById('start-btn');
+  const startGameBtn = document.getElementById('start-game-btn');
   const restartBtn = document.getElementById('restart-btn');
-  const winnerTextEl = document.getElementById('winner-text');
-  const detailTextEl = document.getElementById('detail-text');
-  
-  const p1NameInput = document.getElementById('p1-name-input');
-  const p2NameInput = document.getElementById('p2-name-input');
+  const p1Input = document.getElementById('p1-input');
+  const p2Input = document.getElementById('p2-input');
+
   const p1DisplayName = document.getElementById('p1-display-name');
   const p2DisplayName = document.getElementById('p2-display-name');
   const p1ScoreEl = document.getElementById('p1-score');
+  const p1StageEl = document.getElementById('p1-stage');
+  const p1WinsEl = document.getElementById('p1-wins');
+
   const p2ScoreEl = document.getElementById('p2-score');
+  const p2StageEl = document.getElementById('p2-stage');
+  const p2WinsEl = document.getElementById('p2-wins');
+
+  const winnerTitleText = document.getElementById('winner-title-text');
+  const summaryText = document.getElementById('summary-text');
 
   const obstacleColors = ['#feca57', '#1dd1a1', '#ff9ff3', '#54a0ff', '#ee5253', '#a29bfe'];
 
-  // --- AUDIO SYNTHESIZER (Web Audio API) ---
+  // --- AUDIO SYNTHESIZER ---
   let audioCtx = null;
 
   function initAudio() {
@@ -223,24 +302,39 @@
     }
   }
 
-  function playLaneSwitchSound() {
+  function playLaneSound() {
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(260, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(520, audioCtx.currentTime + 0.07);
-    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.07);
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.06);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.07);
+    osc.stop(audioCtx.currentTime + 0.06);
   }
 
-  function playHitSound() {
+  function playDodgeScoreSound() {
     if (!audioCtx) return;
-    const bufferSize = audioCtx.sampleRate * 0.25;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.05); // E5
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.12);
+  }
+
+  function playCrashSound() {
+    if (!audioCtx) return;
+    const bufferSize = audioCtx.sampleRate * 0.35;
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const output = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -251,12 +345,12 @@
 
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(600, audioCtx.currentTime);
-    filter.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.25);
+    filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+    filter.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.35);
 
     const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
 
     whiteNoise.connect(filter);
     filter.connect(gain);
@@ -264,74 +358,81 @@
     whiteNoise.start();
   }
 
-  function playGameOverSound() {
+  function playStageWinSound() {
     if (!audioCtx) return;
-    const notes = [261.63, 329.63, 392.00, 523.25];
+    const notes = [440, 554.37, 659.25, 880];
     notes.forEach((freq, idx) => {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = 'triangle';
+      osc.type = 'square';
       osc.frequency.value = freq;
-      const startTime = audioCtx.currentTime + idx * 0.1;
-      gain.gain.setValueAtTime(0.2, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+      const t = audioCtx.currentTime + idx * 0.08;
+      gain.gain.setValueAtTime(0.12, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + 0.25);
+      osc.start(t);
+      osc.stop(t + 0.2);
     });
   }
 
-  // --- GAME CALCULATIONS ---
+  // --- GAME COMPUTATION & MODELS ---
   function laneX(sideOffset, roadWidth, laneIndex) {
     const laneWidth = roadWidth / LANES;
     return sideOffset + ROAD_MARGIN + laneWidth * laneIndex + laneWidth / 2;
   }
 
-  function makePlayer(side, name, carType, keys) {
+  function createDriver(side, name, carModel, keys) {
     const sideOffset = side === 'left' ? 0 : HALF;
     const roadWidth = HALF - ROAD_MARGIN * 2;
     return {
-      side, name, carType, keys,
+      side, name, carModel, keys,
       lane: 1,
       sideOffset,
       roadWidth,
-      carW: 38, carH: 64,
+      carW: 42, carH: 72,
       x: laneX(sideOffset, roadWidth, 1),
-      y: H - 100,
+      y: H - 110,
       score: 0,
+      wins: 0,
+      stage: 1,
       boost: false,
       switchCooldown: 0,
       hitCooldown: 0,
+      stageCleared: false
     };
   }
 
-  let p1, p2, obstacles, keysDown, running, spawnTimer, raceTimer, lastTime, roadLineOffset;
+  let p1, p2, obstacles, keysDown, running, spawnTimer, lastTime, roadLineOffset;
 
-  function startNewGame() {
+  function initChampionship() {
     initAudio();
-    const p1Name = p1NameInput.value.trim() || 'Player 1';
-    const p2Name = p2NameInput.value.trim() || 'Player 2';
+    const p1Name = p1Input.value.trim() || 'Player 1';
+    const p2Name = p2Input.value.trim() || 'Player 2';
 
     p1DisplayName.textContent = `🔵 ${p1Name} (Lambo)`;
     p2DisplayName.textContent = `🔴 ${p2Name} (Bugatti)`;
 
-    p1 = makePlayer('left', p1Name, 'lambo', { left: 'arrowleft', right: 'arrowright', boost: 'arrowup' });
-    p2 = makePlayer('right', p2Name, 'bugatti', { left: 'a', right: 'd', boost: 'w' });
-    
+    p1 = createDriver('left', p1Name, 'lambo', { left: 'arrowleft', right: 'arrowright', boost: 'arrowup' });
+    p2 = createDriver('right', p2Name, 'bugatti', { left: 'a', right: 'd', boost: 'w' });
+
+    nameOverlay.classList.add('hidden');
+    startStageRound();
+  }
+
+  function startStageRound() {
     obstacles = [];
     keysDown = {};
     running = true;
     spawnTimer = 0;
-    raceTimer = 60; // 60-second race match
     roadLineOffset = 0;
     lastTime = performance.now();
 
-    startOverlay.classList.add('hidden');
-    gameoverOverlay.classList.add('hidden');
-    p1ScoreEl.textContent = '0';
-    p2ScoreEl.textContent = '0';
+    p1.stageCleared = false;
+    p2.stageCleared = false;
 
+    gameoverOverlay.classList.add('hidden');
+    updateHUD();
     requestAnimationFrame(loop);
   }
 
@@ -341,17 +442,18 @@
     const color = obstacleColors[Math.floor(Math.random() * obstacleColors.length)];
     obstacles.push({
       side: player.side,
-      lane, x, y: -80,
-      w: 34, h: 58,
+      lane, x, y: -90,
+      w: 36, h: 62,
       color,
-      speed: 3.2 + Math.random() * 2.2,
+      speed: 3.5 + Math.random() * 2.0,
+      passed: false,
       hit: false
     });
   }
 
   function rectsOverlap(a, b) {
-    return Math.abs(a.x - b.x) < (a.w + b.w) / 2 - 6 &&
-           Math.abs(a.y - b.y) < (a.h + b.h) / 2 - 6;
+    return Math.abs(a.x - b.x) < (a.w + b.w) / 2 - 8 &&
+           Math.abs(a.y - b.y) < (a.h + b.h) / 2 - 8;
   }
 
   function updatePlayer(player, dt) {
@@ -362,14 +464,14 @@
       if (player.lane > 0) {
         player.lane--;
         player.switchCooldown = 130;
-        playLaneSwitchSound();
+        playLaneSound();
       }
     }
     if (keysDown[player.keys.right] && player.switchCooldown <= 0) {
       if (player.lane < LANES - 1) {
         player.lane++;
         player.switchCooldown = 130;
-        playLaneSwitchSound();
+        playLaneSound();
       }
     }
     player.boost = !!keysDown[player.keys.boost];
@@ -377,256 +479,290 @@
     const targetX = laneX(player.sideOffset, player.roadWidth, player.lane);
     player.x += (targetX - player.x) * 0.25;
 
-    const rate = player.boost ? 2.5 : 1.0;
-    player.score += rate * (dt / 16);
+    // Check Stage Clear Goal
+    if (player.score >= STAGE_GOAL && !player.stageCleared) {
+      player.stageCleared = true;
+      player.wins += 1; // 1 Stage Clear = 1 Win
+      playStageWinSound();
+      finishStage(player);
+    }
   }
 
   function updateObstacles(dt) {
     const factor = dt / 16;
     for (const o of obstacles) {
       const boosted = (o.side === 'left' ? p1.boost : p2.boost);
-      o.y += o.speed * factor * (boosted ? 1.7 : 1);
-    }
+      o.y += o.speed * factor * (boosted ? 1.8 : 1);
 
-    for (const o of obstacles) {
       const player = o.side === 'left' ? p1 : p2;
+
+      // Dodged Obstacle Score
+      if (!o.passed && !o.hit && o.y > player.y + player.carH / 2) {
+        o.passed = true;
+        player.score += 2; // Dodging 1 car gives points
+        playDodgeScoreSound();
+      }
+
+      // Collision Check
       if (!o.hit && rectsOverlap(player, o)) {
         o.hit = true;
-        
-        // Deduction between 2 and 10 points
+        playCrashSound();
+
+        // Crashing penalties: Lose points & Reset Wins for this stage attempt
         const penalty = Math.floor(Math.random() * 9) + 2; 
         player.score = Math.max(0, player.score - penalty);
-        player.hitCooldown = 300; // Visual flash duration
-
-        playHitSound();
+        player.wins = 0; // 0 Wins on crash
+        player.hitCooldown = 350;
       }
     }
 
-    obstacles = obstacles.filter(o => o.y < H + 90);
+    obstacles = obstacles.filter(o => o.y < H + 100);
   }
 
-  // --- 3D RENDERING PIPELINE ---
+  // --- DETAILED 3D CAR RENDERERS ---
+
+  // Detailed 3D Lamborghini Renderer
+  function drawLamborghini3D(x, y, w, h, hit) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (hit) ctx.globalAlpha = 0.45;
+
+    // 3D Ground Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(3, 8, w / 1.6, h / 1.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wheels (3D Extruded)
+    ctx.fillStyle = '#090d16';
+    ctx.fillRect(-w/2 - 4, -h/3, 5, 14);
+    ctx.fillRect(w/2 - 1, -h/3, 5, 14);
+    ctx.fillRect(-w/2 - 4, h/4, 5, 14);
+    ctx.fillRect(w/2 - 1, h/4, 5, 14);
+
+    // Main Chassis - Sharp Metallic Cyan Gradient
+    const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
+    bodyGrad.addColorStop(0, '#0284c7');
+    bodyGrad.addColorStop(0.3, '#38bdf8');
+    bodyGrad.addColorStop(0.7, '#7dd3fc');
+    bodyGrad.addColorStop(1, '#0369a1');
+    ctx.fillStyle = bodyGrad;
+
+    ctx.beginPath();
+    ctx.moveTo(0, -h/2); // Wedge nose
+    ctx.lineTo(w/2 - 2, -h/3);
+    ctx.lineTo(w/2, h/2 - 6);
+    ctx.lineTo(w/2 - 6, h/2);
+    ctx.lineTo(-w/2 + 6, h/2);
+    ctx.lineTo(-w/2, h/2 - 6);
+    ctx.lineTo(-w/2 + 2, -h/3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Carbon Rear Spoiler
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-w/2 + 2, h/2 - 4, w - 4, 5);
+
+    // 3D Angled Cabin Hood
+    const cabinGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
+    cabinGrad.addColorStop(0, '#0f172a');
+    cabinGrad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = cabinGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, -h/3.5);
+    ctx.lineTo(w/3, -h/8);
+    ctx.lineTo(w/3.5, h/4);
+    ctx.lineTo(-w/3.5, h/4);
+    ctx.lineTo(-w/3, -h/8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Windshield Metallic Sheen
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(0, -h/3.5 + 3);
+    ctx.lineTo(w/3 - 3, -h/8);
+    ctx.lineTo(-w/3 + 3, -h/8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Aggressive LED Headlights
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.moveTo(-w/2 + 6, -h/2 + 8);
+    ctx.lineTo(-w/2 + 14, -h/2 + 14);
+    ctx.lineTo(-w/2 + 6, -h/2 + 14);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(w/2 - 6, -h/2 + 8);
+    ctx.lineTo(w/2 - 14, -h/2 + 14);
+    ctx.lineTo(w/2 - 6, -h/2 + 14);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // Detailed 3D Bugatti Renderer
+  function drawBugatti3D(x, y, w, h, hit) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (hit) ctx.globalAlpha = 0.45;
+
+    // 3D Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(3, 8, w / 1.6, h / 1.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wheels
+    ctx.fillStyle = '#090d16';
+    ctx.fillRect(-w/2 - 4, -h/3, 5, 14);
+    ctx.fillRect(w/2 - 1, -h/3, 5, 14);
+    ctx.fillRect(-w/2 - 4, h/4, 5, 14);
+    ctx.fillRect(w/2 - 1, h/4, 5, 14);
+
+    // Deep Crimson Metallic Body
+    const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
+    bodyGrad.addColorStop(0, '#7f1d1d');
+    bodyGrad.addColorStop(0.3, '#dc2626');
+    bodyGrad.addColorStop(0.7, '#f87171');
+    bodyGrad.addColorStop(1, '#991b1b');
+    ctx.fillStyle = bodyGrad;
+
+    ctx.beginPath();
+    ctx.roundRect(-w/2, -h/2, w, h, [14, 14, 10, 10]);
+    ctx.fill();
+
+    // Signature Bugatti Horseshoe Grille
+    ctx.fillStyle = '#020617';
+    ctx.beginPath();
+    ctx.arc(0, -h/2 + 6, 7, 0, Math.PI);
+    ctx.fill();
+
+    // Black C-Shaped Side Curves
+    ctx.fillStyle = '#020617';
+    ctx.beginPath();
+    ctx.arc(-w/2 + 3, 0, h/3.2, -Math.PI/2, Math.PI/2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(w/2 - 3, 0, h/3.2, Math.PI/2, -Math.PI/2);
+    ctx.fill();
+
+    // 3D Canopy/Roof
+    const roofGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
+    roofGrad.addColorStop(0, '#0f172a');
+    roofGrad.addColorStop(1, '#334155');
+    ctx.fillStyle = roofGrad;
+    ctx.beginPath();
+    ctx.roundRect(-w/3.2, -h/3.8, (w*2)/3.2, h/2, 8);
+    ctx.fill();
+
+    // Quad Headlight Bar
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-w/2 + 6, -h/2 + 3, 10, 3);
+    ctx.fillRect(w/2 - 16, -h/2 + 3, 10, 3);
+
+    ctx.restore();
+  }
+
+  // Traffic Obstacle Cars
+  function drawObstacle3D(x, y, w, h, color) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(-w/2 + 3, -h/2 + 5, w, h);
+
+    // Main Body
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(-w/2, -h/2, w, h, 8);
+    ctx.fill();
+
+    // Roof Glass
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.fillRect(-w/3, -h/5, (w*2)/3, h/2.2);
+
+    ctx.restore();
+  }
+
   function drawRoad(sideOffset, roadWidth, offset) {
     const grad = ctx.createLinearGradient(sideOffset, 0, sideOffset, H);
-    grad.addColorStop(0, '#1e293b');
-    grad.addColorStop(1, '#0f172a');
+    grad.addColorStop(0, '#111827');
+    grad.addColorStop(1, '#030712');
     ctx.fillStyle = grad;
     ctx.fillRect(sideOffset, 0, roadWidth + ROAD_MARGIN * 2, H);
 
-    // Curbs
-    ctx.fillStyle = '#22c55e';
+    // Green Curbs
+    ctx.fillStyle = '#10b981';
     ctx.fillRect(sideOffset, 0, ROAD_MARGIN, H);
     ctx.fillRect(sideOffset + ROAD_MARGIN + roadWidth, 0, ROAD_MARGIN, H);
 
-    // Lane dashes
-    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    // Dotted Lane Markings
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
     ctx.lineWidth = 4;
-    ctx.setLineDash([24, 20]);
+    ctx.setLineDash([26, 22]);
     for (let i = 1; i < LANES; i++) {
       const x = sideOffset + ROAD_MARGIN + (roadWidth / LANES) * i;
       ctx.beginPath();
-      ctx.moveTo(x, -20 + offset);
+      ctx.moveTo(x, -22 + offset);
       ctx.lineTo(x, H);
       ctx.stroke();
     }
     ctx.setLineDash([]);
   }
 
-  // 3D Lamborghini Model Renderer
-  function drawLamborghini(x, y, w, h, hit) {
-    ctx.save();
-    ctx.translate(x, y);
-    if (hit) ctx.globalAlpha = 0.5;
-
-    // Drop Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.beginPath();
-    ctx.ellipse(2, 6, w / 1.7, h / 1.8, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Sharp Angular Chassis
-    const baseGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
-    baseGrad.addColorStop(0, '#0284c7');
-    baseGrad.addColorStop(0.5, '#38bdf8');
-    baseGrad.addColorStop(1, '#0284c7');
-    ctx.fillStyle = baseGrad;
-
-    ctx.beginPath();
-    ctx.moveTo(0, -h/2); // Wedge nose
-    ctx.lineTo(w/2 - 2, -h/4);
-    ctx.lineTo(w/2, h/2 - 4);
-    ctx.lineTo(w/3, h/2);
-    ctx.lineTo(-w/3, h/2);
-    ctx.lineTo(-w/2, h/2 - 4);
-    ctx.lineTo(-w/2 + 2, -h/4);
-    ctx.closePath();
-    ctx.fill();
-
-    // 3D Roof / Cabin Wedge
-    const cabinGrad = ctx.createLinearGradient(0, -h/3, 0, h/4);
-    cabinGrad.addColorStop(0, '#0f172a');
-    cabinGrad.addColorStop(1, '#334155');
-    ctx.fillStyle = cabinGrad;
-    
-    ctx.beginPath();
-    ctx.moveTo(0, -h/4);
-    ctx.lineTo(w/3, -h/10);
-    ctx.lineTo(w/3.5, h/4);
-    ctx.lineTo(-w/3.5, h/4);
-    ctx.lineTo(-w/3, -h/10);
-    ctx.closePath();
-    ctx.fill();
-
-    // Windshield Reflection
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
-    ctx.beginPath();
-    ctx.moveTo(0, -h/4 + 2);
-    ctx.lineTo(w/3.5 - 2, -h/10);
-    ctx.lineTo(-w/3.5 + 2, -h/10);
-    ctx.closePath();
-    ctx.fill();
-
-    // Headlights
-    ctx.fillStyle = '#fef08a';
-    ctx.fillRect(-w/2 + 4, -h/2 + 6, 6, 3);
-    ctx.fillRect(w/2 - 10, -h/2 + 6, 6, 3);
-
-    // Wheels
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-w/2 - 3, -h/3, 4, 12);
-    ctx.fillRect(w/2 - 1, -h/3, 4, 12);
-    ctx.fillRect(-w/2 - 3, h/5, 4, 12);
-    ctx.fillRect(w/2 - 1, h/5, 4, 12);
-
-    ctx.restore();
-  }
-
-  // 3D Bugatti Model Renderer
-  function drawBugatti(x, y, w, h, hit) {
-    ctx.save();
-    ctx.translate(x, y);
-    if (hit) ctx.globalAlpha = 0.5;
-
-    // Drop Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.beginPath();
-    ctx.ellipse(2, 6, w / 1.7, h / 1.8, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Aerodynamic Body
-    const mainGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
-    mainGrad.addColorStop(0, '#991b1b');
-    mainGrad.addColorStop(0.5, '#ef4444');
-    mainGrad.addColorStop(1, '#991b1b');
-    ctx.fillStyle = mainGrad;
-
-    ctx.beginPath();
-    ctx.roundRect(-w/2, -h/2, w, h, [12, 12, 8, 8]);
-    ctx.fill();
-
-    // Signature Bugatti Horseshoe Grille Nose
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.arc(0, -h/2 + 4, 6, 0, Math.PI);
-    ctx.fill();
-
-    // Dark Dual-Tone Side Panels
-    ctx.fillStyle = '#0f172a';
-    ctx.beginPath();
-    ctx.arc(-w/2 + 4, 0, h/3.5, -Math.PI/2, Math.PI/2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(w/2 - 4, 0, h/3.5, Math.PI/2, -Math.PI/2);
-    ctx.fill();
-
-    // Glass Roof
-    const roofGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
-    roofGrad.addColorStop(0, '#1e293b');
-    roofGrad.addColorStop(1, '#475569');
-    ctx.fillStyle = roofGrad;
-    ctx.beginPath();
-    ctx.roundRect(-w/3, -h/4, (w*2)/3, h/2, 6);
-    ctx.fill();
-
-    // Front Light Strip
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-w/2 + 6, -h/2 + 2, w - 12, 2);
-
-    // Wheels
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-w/2 - 3, -h/3, 4, 12);
-    ctx.fillRect(w/2 - 1, -h/3, 4, 12);
-    ctx.fillRect(-w/2 - 3, h/5, 4, 12);
-    ctx.fillRect(w/2 - 1, h/5, 4, 12);
-
-    ctx.restore();
-  }
-
-  // Generic Traffic Renderer
-  function drawObstacleCar(x, y, w, h, color) {
-    ctx.save();
-    ctx.translate(x, y);
-
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(-w/2 + 2, -h/2 + 4, w, h);
-
-    // Car Body
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.roundRect(-w/2, -h/2, w, h, 6);
-    ctx.fill();
-
-    // Roof
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fillRect(-w/3, -h/6, (w*2)/3, h/2.5);
-
-    ctx.restore();
-  }
-
   function draw() {
     ctx.clearRect(0, 0, W, H);
 
-    // Render split roads
     drawRoad(p1.sideOffset, p1.roadWidth, roadLineOffset);
     drawRoad(p2.sideOffset, p2.roadWidth, roadLineOffset);
 
-    // Center divider line
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(HALF - 2, 0, 4, H);
+    // Dividing Line
+    ctx.fillStyle = '#000';
+    ctx.fillRect(HALF - 3, 0, 6, H);
 
-    // Draw obstacles
+    // Draw Obstacles
     for (const o of obstacles) {
-      drawObstacleCar(o.x, o.y, o.w, o.h, o.color);
+      drawObstacle3D(o.x, o.y, o.w, o.h, o.color);
     }
 
-    // Draw Player Cars
-    drawLamborghini(p1.x, p1.y, p1.carW, p1.carH, p1.hitCooldown > 0);
-    drawBugatti(p2.x, p2.y, p2.carW, p2.carH, p2.hitCooldown > 0);
+    // Draw Player Supercars
+    drawLamborghini3D(p1.x, p1.y, p1.carW, p1.carH, p1.hitCooldown > 0);
+    drawBugatti3D(p2.x, p2.y, p2.carW, p2.carH, p2.hitCooldown > 0);
 
-    // Update Scores Display
-    p1ScoreEl.textContent = Math.floor(p1.score);
-    p2ScoreEl.textContent = Math.floor(p2.score);
+    updateHUD();
   }
 
-  function endGame() {
+  function updateHUD() {
+    p1ScoreEl.textContent = Math.floor(p1.score);
+    p1StageEl.textContent = p1.stage;
+    p1WinsEl.textContent = p1.wins;
+
+    p2ScoreEl.textContent = Math.floor(p2.score);
+    p2StageEl.textContent = p2.stage;
+    p2WinsEl.textContent = p2.wins;
+  }
+
+  function finishStage(winner) {
     running = false;
-    playGameOverSound();
+    
+    winnerTitleText.textContent = `🏆 ${winner.name} Cleared Stage ${winner.stage}!`;
+    summaryText.innerHTML = `
+      <strong>${winner.name}</strong> reached ${STAGE_GOAL} points and earned <strong>1 Win!</strong><br><br>
+      Total Championship Wins:<br>
+      🔵 ${p1.name}: <strong>${p1.wins} Win(s)</strong><br>
+      🔴 ${p2.name}: <strong>${p2.wins} Win(s)</strong>
+    `;
 
-    const s1 = Math.floor(p1.score);
-    const s2 = Math.floor(p2.score);
+    // Advance Stage Number & reset round points
+    p1.stage += 1;
+    p2.stage += 1;
+    p1.score = 0;
+    p2.score = 0;
 
-    let winnerMsg = '';
-    if (s1 > s2) {
-      winnerMsg = `🏆 ${p1.name} Wins!`;
-    } else if (s2 > s1) {
-      winnerMsg = `🏆 ${p2.name} Wins!`;
-    } else {
-      winnerMsg = "It's a Tie Match!";
-    }
-
-    winnerTextEl.textContent = winnerMsg;
-    detailTextEl.textContent = `${p1.name} (Lambo): ${s1} pts  |  ${p2.name} (Bugatti): ${s2} pts`;
     gameoverOverlay.classList.remove('hidden');
   }
 
@@ -635,20 +771,13 @@
     const dt = Math.min(now - lastTime, 40);
     lastTime = now;
 
-    // Track total match time limit
-    raceTimer -= dt / 1000;
-    if (raceTimer <= 0) {
-      endGame();
-      return;
-    }
-
-    roadLineOffset = (roadLineOffset + dt * 0.35) % 44;
+    roadLineOffset = (roadLineOffset + dt * 0.38) % 48;
 
     updatePlayer(p1, dt);
     updatePlayer(p2, dt);
 
     spawnTimer += dt;
-    if (spawnTimer > 500) {
+    if (spawnTimer > 480) {
       spawnTimer = 0;
       spawnObstacle(p1);
       spawnObstacle(p2);
@@ -660,8 +789,9 @@
     requestAnimationFrame(loop);
   }
 
-  // --- KEY EVENT LISTENERS ---
+  // --- CONTROLS LISTENERS ---
   window.addEventListener('keydown', (e) => {
+    initAudio();
     const key = e.key.toLowerCase();
     keysDown[key] = true;
     if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'w', 'a', 's', 'd'].includes(key)) {
@@ -673,8 +803,9 @@
     keysDown[e.key.toLowerCase()] = false;
   });
 
-  startBtn.addEventListener('click', startNewGame);
-  restartBtn.addEventListener('click', startNewGame);
+  startGameBtn.addEventListener('click', initChampionship);
+  restartBtn.addEventListener('click', startStageRound);
+
 })();
 </script>
 
