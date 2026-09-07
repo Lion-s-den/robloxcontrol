@@ -3,799 +3,228 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Supercar Championship - Official Code</title>
+<title>Supercar Race - First to 100 Wins!</title>
 <style>
-  :root {
-    --bg1: #090d16;
-    --bg2: #1e1b4b;
-    --accent: #feca57;
-  }
-  * { box-sizing: border-box; }
   body {
     margin: 0;
-    min-height: 100vh;
+    background: #0f172a;
+    color: #fff;
+    font-family: sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--bg1), var(--bg2));
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    color: #fff;
-    padding: 12px;
+    min-height: 100vh;
   }
-  h1 {
-    margin: 0 0 4px 0;
-    font-size: 32px;
-    text-align: center;
-    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #1dd1a1);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 20px rgba(254, 202, 87, 0.3);
-  }
-  .subtitle {
-    text-align: center;
-    margin-bottom: 12px;
-    font-size: 14px;
-    opacity: 0.85;
-    letter-spacing: 0.5px;
-  }
+  h1 { margin: 5px 0; color: #feca57; }
+  p { margin: 0 0 10px 0; font-size: 14px; opacity: 0.8; }
   .hud {
     display: flex;
-    justify-space: between;
-    width: 100%;
-    max-width: 860px;
-    margin-bottom: 8px;
-    gap: 14px;
-  }
-  .player-card {
-    flex: 1;
-    border-radius: 12px;
-    padding: 10px 16px;
+    gap: 20px;
+    margin-bottom: 10px;
+    font-size: 18px;
     font-weight: bold;
-    text-align: center;
-    background: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    transition: transform 0.2s ease, border-color 0.2s ease;
   }
-  .p1-card { border: 2px solid #48dbfb; }
-  .p2-card { border: 2px solid #ff6b6b; }
-  .player-card .name-tag {
-    font-size: 16px;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-  }
-  .p1-card .name-tag { color: #48dbfb; }
-  .p2-card .name-tag { color: #ff6b6b; }
-  
-  .stats-row {
-    display: flex;
-    justify-content: space-around;
-    font-size: 13px;
-    opacity: 0.9;
-    margin-top: 4px;
-  }
-  .stats-row span strong {
-    font-size: 16px;
-    color: var(--accent);
-  }
-
-  .stage-box {
-    position: relative;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-    border: 3px solid rgba(255,255,255,0.12);
-  }
-  canvas {
-    display: block;
-    background: #111827;
-  }
-
+  .p1-box { color: #38bdf8; }
+  .p2-box { color: #f87171; }
+  .stage-box { position: relative; }
+  canvas { background: #1e293b; border-radius: 8px; }
   .overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(9, 13, 22, 0.94);
+    background: rgba(15, 23, 42, 0.95);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    text-align: center;
-    padding: 24px;
-    z-index: 10;
-  }
-  .overlay.hidden { display: none; }
-  .overlay h2 {
-    font-size: 26px;
-    margin: 0;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-    max-width: 340px;
-  }
-  .field-box {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-  .field-box label {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    opacity: 0.8;
-  }
-  .field-box input {
-    width: 100%;
-    padding: 12px 16px;
+    gap: 15px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    font-size: 15px;
+  }
+  .hidden { display: none; }
+  input {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
     font-weight: bold;
-    outline: none;
-    transition: border-color 0.2s ease;
-  }
-  .field-box input:focus {
-    border-color: var(--accent);
-  }
-  .overlay .winner-title {
-    font-size: 36px;
-    font-weight: 800;
-    background: linear-gradient(90deg, #feca57, #ff9ff3, #48dbfb);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .overlay .summary {
-    font-size: 15px;
-    line-height: 1.6;
-    max-width: 400px;
-    opacity: 0.9;
   }
   button {
-    background: linear-gradient(90deg, #ff6b6b, #feca57);
+    background: #feca57;
     color: #0f172a;
     border: none;
-    border-radius: 8px;
-    padding: 12px 28px;
-    font-weight: 800;
-    font-size: 15px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    margin-top: 8px;
-    box-shadow: 0 4px 15px rgba(254, 202, 87, 0.3);
-    transition: transform 0.15s ease, filter 0.15s ease;
-  }
-  button:hover {
-    filter: brightness(1.15);
-    transform: translateY(-1px);
-  }
-
-  footer {
-    margin-top: 10px;
-    font-size: 12px;
-    text-align: center;
-    max-width: 860px;
-    opacity: 0.8;
-    line-height: 1.5;
-  }
-  .key {
-    display: inline-block;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 4px;
-    padding: 1px 6px;
-    margin: 0 2px;
+    padding: 10px 20px;
+    border-radius: 6px;
     font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
   }
 </style>
 </head>
 <body>
 
-<h1>🏎️ 3D Supercar Championship</h1>
-<div class="subtitle">Reach 1,000 Points to win a Stage. Dodging grants points. Crashing resets your score to 0!</div>
+<h1>🏎️ Race to 100 Points!</h1>
+<p>Dodge cars to gain points. Crash and score goes back to 0! Reach 100 to WIN!</p>
 
 <div class="hud">
-  <div class="player-card p1-card">
-    <div class="name-tag" id="p1-display-name">🔵 Player 1 (Lamborghini)</div>
-    <div class="stats-row">
-      <span>Score: <strong id="p1-score">0</strong></span>
-      <span>Stage: <strong id="p1-stage">1</strong></span>
-      <span>Wins: <strong id="p1-wins">0</strong></span>
-    </div>
-  </div>
-  <div class="player-card p2-card">
-    <div class="name-tag" id="p2-display-name">🔴 Player 2 (Bugatti)</div>
-    <div class="stats-row">
-      <span>Score: <strong id="p2-score">0</strong></span>
-      <span>Stage: <strong id="p2-stage">1</strong></span>
-      <span>Wins: <strong id="p2-wins">0</strong></span>
-    </div>
-  </div>
+  <div class="p1-box"><span id="p1-name-tag">Player 1</span>: <span id="p1-score">0</span> / 100</div>
+  <div class="p2-box"><span id="p2-name-tag">Player 2</span>: <span id="p2-score">0</span> / 100</div>
 </div>
 
 <div class="stage-box">
-  <canvas id="game" width="860" height="540"></canvas>
+  <canvas id="game" width="800" height="500"></canvas>
 
-  <div class="overlay" id="name-overlay">
-    <h2>Driver Registration</h2>
-    <div class="form-group">
-      <div class="field-box">
-        <label for="p1-input">What's your name, Player 1? (Lamborghini)</label>
-        <input type="text" id="p1-input" placeholder="Enter P1 Name" maxlength="12" value="Lambo Driver">
-      </div>
-      <div class="field-box">
-        <label for="p2-input">What's your name, Player 2? (Bugatti)</label>
-        <input type="text" id="p2-input" placeholder="Enter P2 Name" maxlength="12" value="Bugatti Driver">
-      </div>
-    </div>
-    <button id="start-game-btn">Start Race</button>
+  <!-- Start Screen Overlay -->
+  <div class="overlay" id="start-overlay">
+    <h2>Driver Names</h2>
+    <input type="text" id="p1-input" value="Lambo Driver" placeholder="Player 1 Name">
+    <input type="text" id="p2-input" value="Bugatti Driver" placeholder="Player 2 Name">
+    <button id="start-btn">Start Game</button>
   </div>
 
-  <div class="overlay hidden" id="gameover-overlay">
-    <div class="winner-title" id="winner-title-text">Stage Clear!</div>
-    <div class="summary" id="summary-text"></div>
-    <button id="restart-btn">Play Next Stage</button>
+  <!-- Win Screen Overlay -->
+  <div class="overlay hidden" id="win-overlay">
+    <h2 id="winner-text" style="color: #feca57;">Winner!</h2>
+    <button id="restart-btn">Play Again</button>
   </div>
 </div>
 
-<footer>
-  <strong>P1 Controls (Lambo):</strong> <span class="key">←</span><span class="key">→</span> change lane, <span class="key">↑</span> boost<br>
-  <strong>P2 Controls (Bugatti):</strong> <span class="key">A</span><span class="key">D</span> change lane, <span class="key">W</span> boost<br>
-  First player to hit <strong>1,000 Points</strong> completes the stage and claims <strong>1 Win</strong>. Crashing resets your score back to <strong>0</strong>!
-</footer>
-
 <script>
-(function() {
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const HALF = W / 2;
-  const ROAD_MARGIN = 20;
-  const LANES = 3;
-  const STAGE_GOAL = 1000; // Requirement: 1,000 Points to Win Stage
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 
-  // DOM Elements
-  const nameOverlay = document.getElementById('name-overlay');
-  const gameoverOverlay = document.getElementById('gameover-overlay');
-  const startGameBtn = document.getElementById('start-game-btn');
-  const restartBtn = document.getElementById('restart-btn');
-  const p1Input = document.getElementById('p1-input');
-  const p2Input = document.getElementById('p2-input');
+const p1ScoreEl = document.getElementById('p1-score');
+const p2ScoreEl = document.getElementById('p2-score');
+const p1NameTag = document.getElementById('p1-name-tag');
+const p2NameTag = document.getElementById('p2-name-tag');
 
-  const p1DisplayName = document.getElementById('p1-display-name');
-  const p2DisplayName = document.getElementById('p2-display-name');
-  const p1ScoreEl = document.getElementById('p1-score');
-  const p1StageEl = document.getElementById('p1-stage');
-  const p1WinsEl = document.getElementById('p1-wins');
+const startOverlay = document.getElementById('start-overlay');
+const winOverlay = document.getElementById('win-overlay');
+const winnerText = document.getElementById('winner-text');
 
-  const p2ScoreEl = document.getElementById('p2-score');
-  const p2StageEl = document.getElementById('p2-stage');
-  const p2WinsEl = document.getElementById('p2-wins');
+let running = false;
+let obstacles = [];
+let keys = {};
 
-  const winnerTitleText = document.getElementById('winner-title-text');
-  const summaryText = document.getElementById('summary-text');
+// Player objects
+const p1 = { x: 200, y: 400, w: 40, h: 60, score: 0, name: "Player 1", color: "#38bdf8" };
+const p2 = { x: 600, y: 400, w: 40, h: 60, score: 0, name: "Player 2", color: "#f87171" };
 
-  const obstacleColors = ['#feca57', '#1dd1a1', '#ff9ff3', '#54a0ff', '#ee5253', '#a29bfe'];
+document.getElementById('start-btn').onclick = () => {
+  p1.name = document.getElementById('p1-input').value || "Player 1";
+  p2.name = document.getElementById('p2-input').value || "Player 2";
+  p1NameTag.textContent = p1.name;
+  p2NameTag.textContent = p2.name;
+  startOverlay.classList.add('hidden');
+  resetGame();
+};
 
-  // --- AUDIO SYNTHESIZER ---
-  let audioCtx = null;
+document.getElementById('restart-btn').onclick = () => {
+  winOverlay.classList.add('hidden');
+  resetGame();
+};
 
-  function initAudio() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function resetGame() {
+  p1.score = 0;
+  p2.score = 0;
+  p1.x = 200;
+  p2.x = 600;
+  obstacles = [];
+  running = true;
+  updateHUD();
+}
+
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+function spawnCar() {
+  // P1 lane cars
+  if (Math.random() < 0.03) {
+    obstacles.push({ side: 'left', x: 120 + Math.random() * 160, y: -60, w: 35, h: 55, speed: 4 });
+  }
+  // P2 lane cars
+  if (Math.random() < 0.03) {
+    obstacles.push({ side: 'right', x: 520 + Math.random() * 160, y: -60, w: 35, h: 55, speed: 4 });
+  }
+}
+
+function update() {
+  if (!running) return;
+
+  // Move P1 (Left / Right arrows)
+  if (keys['arrowleft'] && p1.x > 110) p1.x -= 5;
+  if (keys['arrowright'] && p1.x < 290) p1.x += 5;
+
+  // Move P2 (A / D keys)
+  if (keys['a'] && p2.x > 510) p2.x -= 5;
+  if (keys['d'] && p2.x < 690) p2.x += 5;
+
+  spawnCar();
+
+  // Move obstacles and check collisions
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    let o = obstacles[i];
+    o.y += o.speed;
+
+    let player = o.side === 'left' ? p1 : p2;
+
+    // Check hit/crash
+    if (Math.abs(player.x - o.x) < 35 && Math.abs(player.y - o.y) < 50) {
+      player.score = 0; // CRASH = SCORE RESET TO 0!
+      obstacles.splice(i, 1);
+      updateHUD();
+      continue;
     }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
-  }
 
-  function playLaneSound() {
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.06);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.06);
-  }
+    // Dodged car successfully = +5 Points!
+    if (o.y > 500) {
+      player.score += 5;
+      obstacles.splice(i, 1);
+      updateHUD();
 
-  function playDodgeScoreSound() {
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
-    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.05); 
-    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.12);
-  }
-
-  function playCrashSound() {
-    if (!audioCtx) return;
-    const bufferSize = audioCtx.sampleRate * 0.35;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const output = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
-    }
-    const whiteNoise = audioCtx.createBufferSource();
-    whiteNoise.buffer = buffer;
-
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(800, audioCtx.currentTime);
-    filter.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 0.35);
-
-    const gain = audioCtx.createGain();
-    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
-
-    whiteNoise.connect(filter);
-    filter.connect(gain);
-    gain.connect(audioCtx.destination);
-    whiteNoise.start();
-  }
-
-  function playStageWinSound() {
-    if (!audioCtx) return;
-    const notes = [440, 554.37, 659.25, 880];
-    notes.forEach((freq, idx) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
-      const t = audioCtx.currentTime + idx * 0.08;
-      gain.gain.setValueAtTime(0.12, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + 0.2);
-    });
-  }
-
-  // --- GAME COMPUTATION & LOGIC ---
-  function laneX(sideOffset, roadWidth, laneIndex) {
-    const laneWidth = roadWidth / LANES;
-    return sideOffset + ROAD_MARGIN + laneWidth * laneIndex + laneWidth / 2;
-  }
-
-  function createDriver(side, name, carModel, keys) {
-    const sideOffset = side === 'left' ? 0 : HALF;
-    const roadWidth = HALF - ROAD_MARGIN * 2;
-    return {
-      side, name, carModel, keys,
-      lane: 1,
-      sideOffset,
-      roadWidth,
-      carW: 42, carH: 72,
-      x: laneX(sideOffset, roadWidth, 1),
-      y: H - 110,
-      score: 0,
-      wins: 0,
-      stage: 1,
-      boost: false,
-      switchCooldown: 0,
-      hitCooldown: 0,
-      stageCleared: false
-    };
-  }
-
-  let p1, p2, obstacles, keysDown, running, spawnTimer, lastTime, roadLineOffset;
-
-  function initChampionship() {
-    initAudio();
-    const p1Name = p1Input.value.trim() || 'Player 1';
-    const p2Name = p2Input.value.trim() || 'Player 2';
-
-    p1DisplayName.textContent = `🔵 ${p1Name} (Lambo)`;
-    p2DisplayName.textContent = `🔴 ${p2Name} (Bugatti)`;
-
-    p1 = createDriver('left', p1Name, 'lambo', { left: 'arrowleft', right: 'arrowright', boost: 'arrowup' });
-    p2 = createDriver('right', p2Name, 'bugatti', { left: 'a', right: 'd', boost: 'w' });
-
-    nameOverlay.classList.add('hidden');
-    startStageRound();
-  }
-
-  function startStageRound() {
-    obstacles = [];
-    keysDown = {};
-    running = true;
-    spawnTimer = 0;
-    roadLineOffset = 0;
-    lastTime = performance.now();
-
-    p1.stageCleared = false;
-    p2.stageCleared = false;
-
-    gameoverOverlay.classList.add('hidden');
-    updateHUD();
-    requestAnimationFrame(loop);
-  }
-
-  function spawnObstacle(player) {
-    const lane = Math.floor(Math.random() * LANES);
-    const x = laneX(player.sideOffset, player.roadWidth, lane);
-    const color = obstacleColors[Math.floor(Math.random() * obstacleColors.length)];
-    obstacles.push({
-      side: player.side,
-      lane, x, y: -90,
-      w: 36, h: 62,
-      color,
-      speed: 3.5 + Math.random() * 2.0,
-      passed: false,
-      hit: false
-    });
-  }
-
-  function rectsOverlap(a, b) {
-    return Math.abs(a.x - b.x) < (a.w + b.w) / 2 - 8 &&
-           Math.abs(a.y - b.y) < (a.h + b.h) / 2 - 8;
-  }
-
-  function updatePlayer(player, dt) {
-    if (player.switchCooldown > 0) player.switchCooldown -= dt;
-    if (player.hitCooldown > 0) player.hitCooldown -= dt;
-
-    if (keysDown[player.keys.left] && player.switchCooldown <= 0) {
-      if (player.lane > 0) {
-        player.lane--;
-        player.switchCooldown = 130;
-        playLaneSound();
+      // WIN RULE: Reach 100 points to win!
+      if (player.score >= 100) {
+        running = false;
+        winnerText.textContent = `🏆 ${player.name} Wins with 100 Points!`;
+        winOverlay.classList.remove('hidden');
       }
     }
-    if (keysDown[player.keys.right] && player.switchCooldown <= 0) {
-      if (player.lane < LANES - 1) {
-        player.lane++;
-        player.switchCooldown = 130;
-        playLaneSound();
-      }
-    }
-    player.boost = !!keysDown[player.keys.boost];
-
-    const targetX = laneX(player.sideOffset, player.roadWidth, player.lane);
-    player.x += (targetX - player.x) * 0.25;
-
-    // Check Stage Goal (1,000 Points)
-    if (player.score >= STAGE_GOAL && !player.stageCleared) {
-      player.stageCleared = true;
-      player.wins += 1; // Stage clear grants 1 Win
-      playStageWinSound();
-      finishStage(player);
-    }
   }
+}
 
-  function updateObstacles(dt) {
-    const factor = dt / 16;
-    for (const o of obstacles) {
-      const boosted = (o.side === 'left' ? p1.boost : p2.boost);
-      o.y += o.speed * factor * (boosted ? 1.8 : 1);
+function updateHUD() {
+  p1ScoreEl.textContent = p1.score;
+  p2ScoreEl.textContent = p2.score;
+}
 
-      const player = o.side === 'left' ? p1 : p2;
+function draw() {
+  ctx.clearRect(0, 0, 800, 500);
 
-      // Score points when successfully dodging a car
-      if (!o.passed && !o.hit && o.y > player.y + player.carH / 2) {
-        o.passed = true;
-        player.score += 10; // Gaining points for dodging cars
-        playDodgeScoreSound();
-      }
+  // Roads
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(100, 0, 200, 500);
+  ctx.fillRect(500, 0, 200, 500);
 
-      // CRASH RULE: Touch another car = Score instantly resets to 0
-      if (!o.hit && rectsOverlap(player, o)) {
-        o.hit = true;
-        playCrashSound();
+  // Players
+  ctx.fillStyle = p1.color;
+  ctx.fillRect(p1.x - 20, p1.y - 30, p1.w, p1.h);
 
-        player.score = 0; // CRASH PENALTY: Score goes straight back to 0!
-        player.hitCooldown = 350;
-      }
-    }
+  ctx.fillStyle = p2.color;
+  ctx.fillRect(p2.x - 20, p2.y - 30, p2.w, p2.h);
 
-    obstacles = obstacles.filter(o => o.y < H + 100);
+  // Obstacle cars
+  ctx.fillStyle = "#feca57";
+  for (let o of obstacles) {
+    ctx.fillRect(o.x - 17, o.y - 27, o.w, o.h);
   }
+}
 
-  // --- 3D RENDERING PIPELINE ---
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
 
-  // 3D Lamborghini Model
-  function drawLamborghini3D(x, y, w, h, hit) {
-    ctx.save();
-    ctx.translate(x, y);
-    if (hit) ctx.globalAlpha = 0.45;
-
-    // Drop Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.beginPath();
-    ctx.ellipse(3, 8, w / 1.6, h / 1.7, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Wheels
-    ctx.fillStyle = '#090d16';
-    ctx.fillRect(-w/2 - 4, -h/3, 5, 14);
-    ctx.fillRect(w/2 - 1, -h/3, 5, 14);
-    ctx.fillRect(-w/2 - 4, h/4, 5, 14);
-    ctx.fillRect(w/2 - 1, h/4, 5, 14);
-
-    // Main Body - Cyan Wedge
-    const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
-    bodyGrad.addColorStop(0, '#0284c7');
-    bodyGrad.addColorStop(0.3, '#38bdf8');
-    bodyGrad.addColorStop(0.7, '#7dd3fc');
-    bodyGrad.addColorStop(1, '#0369a1');
-    ctx.fillStyle = bodyGrad;
-
-    ctx.beginPath();
-    ctx.moveTo(0, -h/2);
-    ctx.lineTo(w/2 - 2, -h/3);
-    ctx.lineTo(w/2, h/2 - 6);
-    ctx.lineTo(w/2 - 6, h/2);
-    ctx.lineTo(-w/2 + 6, h/2);
-    ctx.lineTo(-w/2, h/2 - 6);
-    ctx.lineTo(-w/2 + 2, -h/3);
-    ctx.closePath();
-    ctx.fill();
-
-    // Spoiler
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-w/2 + 2, h/2 - 4, w - 4, 5);
-
-    // 3D Cabin Roof
-    const cabinGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
-    cabinGrad.addColorStop(0, '#0f172a');
-    cabinGrad.addColorStop(1, '#1e293b');
-    ctx.fillStyle = cabinGrad;
-    ctx.beginPath();
-    ctx.moveTo(0, -h/3.5);
-    ctx.lineTo(w/3, -h/8);
-    ctx.lineTo(w/3.5, h/4);
-    ctx.lineTo(-w/3.5, h/4);
-    ctx.lineTo(-w/3, -h/8);
-    ctx.closePath();
-    ctx.fill();
-
-    // Windshield Refraction
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.7)';
-    ctx.beginPath();
-    ctx.moveTo(0, -h/3.5 + 3);
-    ctx.lineTo(w/3 - 3, -h/8);
-    ctx.lineTo(-w/3 + 3, -h/8);
-    ctx.closePath();
-    ctx.fill();
-
-    // Headlights
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath();
-    ctx.moveTo(-w/2 + 6, -h/2 + 8);
-    ctx.lineTo(-w/2 + 14, -h/2 + 14);
-    ctx.lineTo(-w/2 + 6, -h/2 + 14);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(w/2 - 6, -h/2 + 8);
-    ctx.lineTo(w/2 - 14, -h/2 + 14);
-    ctx.lineTo(w/2 - 6, -h/2 + 14);
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  // 3D Bugatti Model
-  function drawBugatti3D(x, y, w, h, hit) {
-    ctx.save();
-    ctx.translate(x, y);
-    if (hit) ctx.globalAlpha = 0.45;
-
-    // Drop Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.beginPath();
-    ctx.ellipse(3, 8, w / 1.6, h / 1.7, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Wheels
-    ctx.fillStyle = '#090d16';
-    ctx.fillRect(-w/2 - 4, -h/3, 5, 14);
-    ctx.fillRect(w/2 - 1, -h/3, 5, 14);
-    ctx.fillRect(-w/2 - 4, h/4, 5, 14);
-    ctx.fillRect(w/2 - 1, h/4, 5, 14);
-
-    // Crimson Body
-    const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
-    bodyGrad.addColorStop(0, '#7f1d1d');
-    bodyGrad.addColorStop(0.3, '#dc2626');
-    bodyGrad.addColorStop(0.7, '#f87171');
-    bodyGrad.addColorStop(1, '#991b1b');
-    ctx.fillStyle = bodyGrad;
-
-    ctx.beginPath();
-    ctx.roundRect(-w/2, -h/2, w, h, [14, 14, 10, 10]);
-    ctx.fill();
-
-    // Bugatti Horseshoe Grille
-    ctx.fillStyle = '#020617';
-    ctx.beginPath();
-    ctx.arc(0, -h/2 + 6, 7, 0, Math.PI);
-    ctx.fill();
-
-    // Side Curves
-    ctx.fillStyle = '#020617';
-    ctx.beginPath();
-    ctx.arc(-w/2 + 3, 0, h/3.2, -Math.PI/2, Math.PI/2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(w/2 - 3, 0, h/3.2, Math.PI/2, -Math.PI/2);
-    ctx.fill();
-
-    // Glass Roof
-    const roofGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
-    roofGrad.addColorStop(0, '#0f172a');
-    roofGrad.addColorStop(1, '#334155');
-    ctx.fillStyle = roofGrad;
-    ctx.beginPath();
-    ctx.roundRect(-w/3.2, -h/3.8, (w*2)/3.2, h/2, 8);
-    ctx.fill();
-
-    // Light Strip
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-w/2 + 6, -h/2 + 3, 10, 3);
-    ctx.fillRect(w/2 - 16, -h/2 + 3, 10, 3);
-
-    ctx.restore();
-  }
-
-  // Traffic Cars
-  function drawObstacle3D(x, y, w, h, color) {
-    ctx.save();
-    ctx.translate(x, y);
-
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fillRect(-w/2 + 3, -h/2 + 5, w, h);
-
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.roundRect(-w/2, -h/2, w, h, 8);
-    ctx.fill();
-
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
-    ctx.fillRect(-w/3, -h/5, (w*2)/3, h/2.2);
-
-    ctx.restore();
-  }
-
-  function drawRoad(sideOffset, roadWidth, offset) {
-    const grad = ctx.createLinearGradient(sideOffset, 0, sideOffset, H);
-    grad.addColorStop(0, '#111827');
-    grad.addColorStop(1, '#030712');
-    ctx.fillStyle = grad;
-    ctx.fillRect(sideOffset, 0, roadWidth + ROAD_MARGIN * 2, H);
-
-    ctx.fillStyle = '#10b981';
-    ctx.fillRect(sideOffset, 0, ROAD_MARGIN, H);
-    ctx.fillRect(sideOffset + ROAD_MARGIN + roadWidth, 0, ROAD_MARGIN, H);
-
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-    ctx.lineWidth = 4;
-    ctx.setLineDash([26, 22]);
-    for (let i = 1; i < LANES; i++) {
-      const x = sideOffset + ROAD_MARGIN + (roadWidth / LANES) * i;
-      ctx.beginPath();
-      ctx.moveTo(x, -22 + offset);
-      ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-    ctx.setLineDash([]);
-  }
-
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-
-    drawRoad(p1.sideOffset, p1.roadWidth, roadLineOffset);
-    drawRoad(p2.sideOffset, p2.roadWidth, roadLineOffset);
-
-    ctx.fillStyle = '#000';
-    ctx.fillRect(HALF - 3, 0, 6, H);
-
-    for (const o of obstacles) {
-      drawObstacle3D(o.x, o.y, o.w, o.h, o.color);
-    }
-
-    drawLamborghini3D(p1.x, p1.y, p1.carW, p1.carH, p1.hitCooldown > 0);
-    drawBugatti3D(p2.x, p2.y, p2.carW, p2.carH, p2.hitCooldown > 0);
-
-    updateHUD();
-  }
-
-  function updateHUD() {
-    p1ScoreEl.textContent = Math.floor(p1.score);
-    p1StageEl.textContent = p1.stage;
-    p1WinsEl.textContent = p1.wins;
-
-    p2ScoreEl.textContent = Math.floor(p2.score);
-    p2StageEl.textContent = p2.stage;
-    p2WinsEl.textContent = p2.wins;
-  }
-
-  function finishStage(winner) {
-    running = false;
-    
-    winnerTitleText.textContent = `🏆 ${winner.name} Cleared Stage ${winner.stage}!`;
-    summaryText.innerHTML = `
-      <strong>${winner.name}</strong> reached <strong>1,000 points</strong> and won the stage!<br><br>
-      Total Stage Victories:<br>
-      🔵 ${p1.name}: <strong>${p1.wins} Win(s)</strong><br>
-      🔴 ${p2.name}: <strong>${p2.wins} Win(s)</strong>
-    `;
-
-    p1.stage += 1;
-    p2.stage += 1;
-    p1.score = 0;
-    p2.score = 0;
-
-    gameoverOverlay.classList.remove('hidden');
-  }
-
-  function loop(now) {
-    if (!running) return;
-    const dt = Math.min(now - lastTime, 40);
-    lastTime = now;
-
-    roadLineOffset = (roadLineOffset + dt * 0.38) % 48;
-
-    updatePlayer(p1, dt);
-    updatePlayer(p2, dt);
-
-    spawnTimer += dt;
-    if (spawnTimer > 480) {
-      spawnTimer = 0;
-      spawnObstacle(p1);
-      spawnObstacle(p2);
-    }
-
-    updateObstacles(dt);
-    draw();
-
-    requestAnimationFrame(loop);
-  }
-
-  // --- CONTROLS LISTENERS ---
-  window.addEventListener('keydown', (e) => {
-    initAudio();
-    const key = e.key.toLowerCase();
-    keysDown[key] = true;
-    if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'w', 'a', 's', 'd'].includes(key)) {
-      e.preventDefault();
-    }
-  });
-
-  window.addEventListener('keyup', (e) => {
-    keysDown[e.key.toLowerCase()] = false;
-  });
-
-  startGameBtn.addEventListener('click', initChampionship);
-  restartBtn.addEventListener('click', startStageRound);
-
-})();
+loop();
 </script>
-
 </body>
 </html>
