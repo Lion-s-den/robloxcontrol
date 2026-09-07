@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Supercar Championship - Detailed 3D Models</title>
+<title>3D Supercar Championship</title>
 <style>
   :root {
     --bg1: #090d16;
@@ -187,20 +187,20 @@
 <body>
 
 <h1>🏎️ 3D Supercar Championship</h1>
-<div class="subtitle">Dodge cars to score points. Crashing drops your score straight to 0! Reach the stage goal to upgrade.</div>
+<div class="subtitle">Dodge cars (+5 Points). Crashing drops your score to 0! First to 100 Points wins the stage!</div>
 
 <div class="hud">
   <div class="player-card p1-card">
     <div class="name-tag" id="p1-display-name">🔵 Player 1 (Lamborghini)</div>
     <div class="stats-row">
-      <span>Score: <strong id="p1-score">0</strong> / <span id="p1-goal">100</span></span>
+      <span>Score: <strong id="p1-score">0</strong> / 100</span>
       <span>Stage: <strong id="p1-stage">1</strong></span>
     </div>
   </div>
   <div class="player-card p2-card">
     <div class="name-tag" id="p2-display-name">🔴 Player 2 (Bugatti)</div>
     <div class="stats-row">
-      <span>Score: <strong id="p2-score">0</strong> / <span id="p2-goal">100</span></span>
+      <span>Score: <strong id="p2-score">0</strong> / 100</span>
       <span>Stage: <strong id="p2-stage">1</strong></span>
     </div>
   </div>
@@ -227,7 +227,7 @@
   <div class="overlay hidden" id="gameover-overlay">
     <div class="winner-title" id="winner-title-text">Stage Clear!</div>
     <div class="summary" id="summary-text"></div>
-    <button id="restart-btn">Next Stage & Upgrade Car</button>
+    <button id="restart-btn">Play Next Stage</button>
   </div>
 </div>
 
@@ -244,6 +244,7 @@
   const HALF = W / 2;
   const ROAD_MARGIN = 20;
   const LANES = 3;
+  const STAGE_GOAL = 100; // Reach 100 Points to win the stage
 
   const nameOverlay = document.getElementById('name-overlay');
   const gameoverOverlay = document.getElementById('gameover-overlay');
@@ -255,26 +256,15 @@
   const p1DisplayName = document.getElementById('p1-display-name');
   const p2DisplayName = document.getElementById('p2-display-name');
   const p1ScoreEl = document.getElementById('p1-score');
-  const p1GoalEl = document.getElementById('p1-goal');
   const p1StageEl = document.getElementById('p1-stage');
 
   const p2ScoreEl = document.getElementById('p2-score');
-  const p2GoalEl = document.getElementById('p2-goal');
   const p2StageEl = document.getElementById('p2-stage');
 
   const winnerTitleText = document.getElementById('winner-title-text');
   const summaryText = document.getElementById('summary-text');
 
   const trafficColors = ['#feca57', '#1dd1a1', '#ff9ff3', '#a29bfe', '#ee5253'];
-
-  function getStageGoal(stage) {
-    if (stage === 1) return 100;
-    if (stage === 2) return 200;
-    if (stage === 10) return 1000;
-    if (stage >= 20) return 5000;
-    if (stage <= 10) return 200 + (stage - 2) * 100;
-    return 1000 + (stage - 10) * 400;
-  }
 
   // --- AUDIO SYNTHESIZER ---
   let audioCtx = null;
@@ -404,8 +394,8 @@
     const targetX = laneX(player.sideOffset, player.roadWidth, player.lane);
     player.x += (targetX - player.x) * (0.25 + Math.min(0.2, player.stage * 0.01));
 
-    const goal = getStageGoal(player.stage);
-    if (player.score >= goal && !player.stageCleared) {
+    // Check Stage Clear Goal (100 Points)
+    if (player.score >= STAGE_GOAL && !player.stageCleared) {
       player.stageCleared = true;
       finishStage(player);
     }
@@ -418,17 +408,18 @@
       o.y += o.speed * factor * (boosted ? 1.8 : 1);
       const player = o.side === 'left' ? p1 : p2;
 
+      // DODGE CAR: Gain +5 Points
       if (!o.passed && !o.hit && o.y > player.y + player.carH / 2) {
         o.passed = true;
-        player.score += 10;
+        player.score += 5; // Dodging gives 5 numbers
         playSound('dodge');
       }
 
-      // Crash = Score Reset to 0
+      // CRASH RULE: Touch car = Score drops to 0 & try again
       if (!o.hit && rectsOverlap(player, o)) {
         o.hit = true;
         playSound('crash');
-        player.score = 0;
+        player.score = 0; // Score goes back to zero on crash
         player.hitCooldown = 350;
       }
     }
@@ -444,7 +435,7 @@
     ctx.translate(x, y);
     if (hitCooldown > 0) ctx.globalAlpha = 0.45;
 
-    // Neon Glow Underbody (Stage Upgrade)
+    // Neon Glow Underbody
     if (stage >= 2) {
       ctx.shadowColor = '#00d2ff';
       ctx.shadowBlur = 12 + Math.min(20, stage * 1.5);
@@ -466,7 +457,7 @@
     ctx.fillRect(-w/2 - 3, h/4, 5, 16);
     ctx.fillRect(w/2 - 2, h/4, 5, 16);
 
-    // Aerodynamic Wedge Chassis (Gradient Base)
+    // Aerodynamic Wedge Chassis
     const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
     bodyGrad.addColorStop(0, '#0284c7');
     bodyGrad.addColorStop(0.3, '#38bdf8');
@@ -475,7 +466,7 @@
     ctx.fillStyle = bodyGrad;
 
     ctx.beginPath();
-    ctx.moveTo(0, -h/2); // Nose
+    ctx.moveTo(0, -h/2);
     ctx.lineTo(w/2 - 2, -h/3);
     ctx.lineTo(w/2, h/2 - 8);
     ctx.lineTo(w/2 - 6, h/2);
@@ -516,7 +507,7 @@
     ctx.closePath();
     ctx.fill();
 
-    // Y-Shaped Lamborghini Headlights
+    // Y-Shaped Headlights
     ctx.strokeStyle = '#fef08a';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -531,7 +522,7 @@
     ctx.fillRect(-w/2 - 2, h/2 - 6, 3, 6);
     ctx.fillRect(w/2 - 1, h/2 - 6, 3, 6);
 
-    // Nitro Flames (Stage 3+)
+    // Nitro Flames
     if (stage >= 3 && boost) {
       ctx.fillStyle = '#ff6b6b';
       ctx.beginPath();
@@ -571,7 +562,7 @@
     ctx.fillRect(-w/2 - 3, h/4, 5, 16);
     ctx.fillRect(w/2 - 2, h/4, 5, 16);
 
-    // Main Bugatti Dual-Tone Crimson Body
+    // Main Crimson Body
     const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
     bodyGrad.addColorStop(0, '#7f1d1d');
     bodyGrad.addColorStop(0.3, '#dc2626');
@@ -583,13 +574,13 @@
     ctx.roundRect(-w/2, -h/2, w, h, [16, 16, 12, 12]);
     ctx.fill();
 
-    // Signature Bugatti Horseshoe Front Grille
+    // Horseshoe Grille
     ctx.fillStyle = '#020617';
     ctx.beginPath();
     ctx.arc(0, -h/2 + 7, 8, 0, Math.PI);
     ctx.fill();
 
-    // Bugatti Side C-Line Aerodynamic Curves
+    // Side C-Line Aerodynamic Curves
     ctx.strokeStyle = '#020617';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -608,16 +599,16 @@
     ctx.roundRect(-w/3.2, -h/3.8, (w*2)/3.2, h/2, 8);
     ctx.fill();
 
-    // Horizontal Quad LED Light Bars
+    // Quad LED Light Bars
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(-w/2 + 6, -h/2 + 4, 10, 3);
     ctx.fillRect(w/2 - 16, -h/2 + 4, 10, 3);
 
-    // Continuous Rear Light Bar
+    // Rear Light Bar
     ctx.fillStyle = '#ff2a6d';
     ctx.fillRect(-w/2 + 4, h/2 - 4, w - 8, 3);
 
-    // Nitro Flames (Stage 3+)
+    // Nitro Flames
     if (stage >= 3 && boost) {
       ctx.fillStyle = '#feca57';
       ctx.beginPath();
@@ -690,35 +681,28 @@
 
   function updateHUD() {
     p1ScoreEl.textContent = Math.floor(p1.score);
-    p1GoalEl.textContent = getStageGoal(p1.stage);
     p1StageEl.textContent = p1.stage;
 
     p2ScoreEl.textContent = Math.floor(p2.score);
-    p2GoalEl.textContent = getStageGoal(p2.stage);
     p2StageEl.textContent = p2.stage;
   }
 
   function finishStage(winner) {
     running = false;
-    const goal = getStageGoal(winner.stage);
-    if (winner.stage >= 20) {
-      winnerTitleText.textContent = `👑 GRAND CHAMPION: ${winner.name}!`;
-      summaryText.innerHTML = `<strong>${winner.name}</strong> cleared Stage 20 with <strong>5,000 Points</strong>!`;
-      restartBtn.textContent = "Restart Championship";
-      p1.stage = 1; p2.stage = 1;
-    } else {
-      winnerTitleText.textContent = `🏆 ${winner.name} Cleared Stage ${winner.stage}!`;
-      const nextStage = winner.stage + 1;
-      const nextGoal = getStageGoal(nextStage);
-      summaryText.innerHTML = `
-        <strong>${winner.name}</strong> hit <strong>${goal} points</strong>!<br><br>
-        🔧 <strong>Supercar Upgraded:</strong> Better Handling & Neon Glow Unlocked!<br><br>
-        Next Target (Stage ${nextStage}): <strong>${nextGoal} Points</strong>
-      `;
-      p1.stage++; p2.stage++;
-      restartBtn.textContent = `Start Stage ${nextStage}`;
-    }
-    p1.score = 0; p2.score = 0;
+    winnerTitleText.textContent = `🏆 ${winner.name} Cleared Stage ${winner.stage}!`;
+    const nextStage = winner.stage + 1;
+
+    summaryText.innerHTML = `
+      <strong>${winner.name}</strong> reached <strong>100 points</strong> and won Stage ${winner.stage}!<br><br>
+      🔧 <strong>Supercar Upgraded:</strong> Performance & Handling Boosted!
+    `;
+
+    p1.stage++;
+    p2.stage++;
+    restartBtn.textContent = `Play Stage ${nextStage}`;
+
+    p1.score = 0;
+    p2.score = 0;
     gameoverOverlay.classList.remove('hidden');
   }
 
