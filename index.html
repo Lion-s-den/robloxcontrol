@@ -238,13 +238,15 @@
 
 <script>
 (function() {
+  const socket = io(); // Connects to server.js automatically
+
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const HALF = W / 2;
   const ROAD_MARGIN = 20;
   const LANES = 3;
-  const STAGE_GOAL = 100; // Reach 100 Points to win the stage
+  const STAGE_GOAL = 100;
 
   const nameOverlay = document.getElementById('name-overlay');
   const gameoverOverlay = document.getElementById('gameover-overlay');
@@ -257,14 +259,24 @@
   const p2DisplayName = document.getElementById('p2-display-name');
   const p1ScoreEl = document.getElementById('p1-score');
   const p1StageEl = document.getElementById('p1-stage');
-
   const p2ScoreEl = document.getElementById('p2-score');
   const p2StageEl = document.getElementById('p2-stage');
 
   const winnerTitleText = document.getElementById('winner-title-text');
   const summaryText = document.getElementById('summary-text');
-
   const trafficColors = ['#feca57', '#1dd1a1', '#ff9ff3', '#a29bfe', '#ee5253'];
+
+  let myRole = null; // 'Lamborghini' or 'Bugatti'
+  let myPlayerId = null;
+
+  // Listen for initial connection & role assignment from server.js
+  socket.on('init', (data) => {
+    myPlayerId = data.id;
+    if (data.players[myPlayerId]) {
+      myRole = data.players[myPlayerId].role;
+      console.log(`Connected as: ${myRole}`);
+    }
+  });
 
   // --- AUDIO SYNTHESIZER ---
   let audioCtx = null;
@@ -320,12 +332,8 @@
       carW: 46, carH: 80,
       x: laneX(sideOffset, roadWidth, 1),
       y: H - 110,
-      score: 0,
-      stage: 1,
-      boost: false,
-      switchCooldown: 0,
-      hitCooldown: 0,
-      stageCleared: false
+      score: 0, stage: 1, boost: false,
+      switchCooldown: 0, hitCooldown: 0, stageCleared: false
     };
   }
 
@@ -361,8 +369,7 @@
     const color = trafficColors[Math.floor(Math.random() * trafficColors.length)];
     obstacles.push({
       side: player.side,
-      x, y: -90, w: 38, h: 68,
-      color,
+      x, y: -90, w: 38, h: 68, color,
       speed: 3.8 + (player.stage * 0.15) + Math.random() * 2.0,
       passed: false, hit: false
     });
@@ -377,29 +384,48 @@
     if (player.switchCooldown > 0) player.switchCooldown -= dt;
     if (player.hitCooldown > 0) player.hitCooldown -= dt;
 
-    const leftKey = player.side === 'left' ? 'arrowleft' : 'a';
-    const rightKey = player.side === 'left' ? 'arrowright' : 'd';
-    const boostKey = player.side === 'left' ? 'arrowup' : 'w';
+    // Check if controls match assigned role
+    const isP1 = player.side === 'left';
+    const canControl = (isP1 && myRole === 'Lamborghini') || (!isP1 && myRole === 'Bugatti') || !myRole;
 
-    const cool = Math.max(70, 130 - player.stage * 3);
+    if (canControl) {
+      const leftKey = isP1 ? 'arrowleft' : 'a';
+      const rightKey = isP1 ? 'arrowright' : 'd';
+      const boostKey = isP1 ? 'arrowup' : 'w';
+      const cool = Math.max(70, 130 - player.stage * 3);
 
-    if (keysDown[leftKey] && player.switchCooldown <= 0) {
-      if (player.lane > 0) { player.lane--; player.switchCooldown = cool; }
+      if (keysDown[leftKey] && player.switchCooldown <= 0) {
+        if (player.lane > 0) { player.lane--; player.switchCooldown = cool; }
+      }
+      if (keysDown[rightKey] && player.switchCooldown <= 0) {
+        if (player.lane < LANES - 1) { player.lane++; player.switchCooldown = cool; }
+      }
+      player.boost = !!keysDown[boostKey];
+
+      // Emit movement to central server
+      socket.emit('playerMove', { x: player.x, y: player.y, lane: player.lane });
     }
-    if (keysDown[rightKey] && player.switchCooldown <= 0) {
-      if (player.lane < LANES - 1) { player.lane++; player.switchCooldown = cool; }
-    }
-    player.boost = !!keysDown[boostKey];
 
     const targetX = laneX(player.sideOffset, player.roadWidth, player.lane);
     player.x += (targetX - player.x) * (0.25 + Math.min(0.2, player.stage * 0.01));
 
-    // Check Stage Clear Goal (100 Points)
     if (player.score >= STAGE_GOAL && !player.stageCleared) {
       player.stageCleared = true;
       finishStage(player);
     }
   }
+
+  // Sync state received from server
+  socket.on('stateUpdate', (players) => {
+    Object.keys(players).forEach(id => {
+      const pData = players[id];
+      if (pData.role === 'Lamborghini' && myRole !== 'Lamborghini' && p1) {
+        p1.lane = pData.lane || p1.lane;
+      } else if (pData.role === 'Bugatti' && myRole !== 'Bugatti' && p2) {
+        p2.lane = pData.lane || p2.lane;
+      }
+    });
+  });
 
   function updateObstacles(dt) {
     const factor = dt / 16;
@@ -408,34 +434,28 @@
       o.y += o.speed * factor * (boosted ? 1.8 : 1);
       const player = o.side === 'left' ? p1 : p2;
 
-      // DODGE CAR: Gain +5 Points
       if (!o.passed && !o.hit && o.y > player.y + player.carH / 2) {
         o.passed = true;
-        player.score += 5; // Dodging gives 5 numbers
+        player.score += 5;
         playSound('dodge');
       }
 
-      // CRASH RULE: Touch car = Score drops to 0 & try again
       if (!o.hit && rectsOverlap(player, o)) {
         o.hit = true;
         playSound('crash');
-        player.score = 0; // Score goes back to zero on crash
+        player.score = 0;
         player.hitCooldown = 350;
       }
     }
     obstacles = obstacles.filter(o => o.y < H + 100);
   }
 
-  // --- 3D SUPERCAR DETAILED CANVASES ---
-
-  // 3D Lamborghini Model Rendering
   function drawLamborghini3D(player) {
     const { x, y, carW: w, carH: h, hitCooldown, stage, boost } = player;
     ctx.save();
     ctx.translate(x, y);
     if (hitCooldown > 0) ctx.globalAlpha = 0.45;
 
-    // Neon Glow Underbody
     if (stage >= 2) {
       ctx.shadowColor = '#00d2ff';
       ctx.shadowBlur = 12 + Math.min(20, stage * 1.5);
@@ -444,20 +464,17 @@
       ctx.shadowBlur = 0;
     }
 
-    // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
     ctx.ellipse(3, 8, w/1.5, h/1.6, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3D Tires
     ctx.fillStyle = '#111';
     ctx.fillRect(-w/2 - 3, -h/3, 5, 16);
     ctx.fillRect(w/2 - 2, -h/3, 5, 16);
     ctx.fillRect(-w/2 - 3, h/4, 5, 16);
     ctx.fillRect(w/2 - 2, h/4, 5, 16);
 
-    // Aerodynamic Wedge Chassis
     const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
     bodyGrad.addColorStop(0, '#0284c7');
     bodyGrad.addColorStop(0.3, '#38bdf8');
@@ -476,7 +493,6 @@
     ctx.closePath();
     ctx.fill();
 
-    // Side Vents & Hood Edges
     ctx.strokeStyle = '#0284c7';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -484,7 +500,6 @@
     ctx.moveTo(w/2 - 6, -h/3); ctx.lineTo(w/4, -h/6); ctx.lineTo(w/4, h/4);
     ctx.stroke();
 
-    // 3D Cabin Roof Structure
     const cabinGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
     cabinGrad.addColorStop(0, '#0f172a');
     cabinGrad.addColorStop(1, '#1e293b');
@@ -498,7 +513,6 @@
     ctx.closePath();
     ctx.fill();
 
-    // Windshield Metallic Reflection
     ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
     ctx.beginPath();
     ctx.moveTo(0, -h/3.8 + 2);
@@ -507,7 +521,6 @@
     ctx.closePath();
     ctx.fill();
 
-    // Y-Shaped Headlights
     ctx.strokeStyle = '#fef08a';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -515,14 +528,12 @@
     ctx.moveTo(w/2 - 5, -h/2 + 12); ctx.lineTo(w/2 - 11, -h/2 + 10); ctx.lineTo(w/2 - 11, -h/2 + 16);
     ctx.stroke();
 
-    // Rear Carbon Wing Spoiler
     ctx.fillStyle = '#020617';
     ctx.fillRect(-w/2 - 2, h/2 - 6, w + 4, 6);
     ctx.fillStyle = '#38bdf8';
     ctx.fillRect(-w/2 - 2, h/2 - 6, 3, 6);
     ctx.fillRect(w/2 - 1, h/2 - 6, 3, 6);
 
-    // Nitro Flames
     if (stage >= 3 && boost) {
       ctx.fillStyle = '#ff6b6b';
       ctx.beginPath();
@@ -533,14 +544,12 @@
     ctx.restore();
   }
 
-  // 3D Bugatti Model Rendering
   function drawBugatti3D(player) {
     const { x, y, carW: w, carH: h, hitCooldown, stage, boost } = player;
     ctx.save();
     ctx.translate(x, y);
     if (hitCooldown > 0) ctx.globalAlpha = 0.45;
 
-    // Neon Glow Underbody
     if (stage >= 2) {
       ctx.shadowColor = '#ff2a6d';
       ctx.shadowBlur = 12 + Math.min(20, stage * 1.5);
@@ -549,20 +558,17 @@
       ctx.shadowBlur = 0;
     }
 
-    // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
     ctx.ellipse(3, 8, w/1.5, h/1.6, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3D Tires
     ctx.fillStyle = '#111';
     ctx.fillRect(-w/2 - 3, -h/3, 5, 16);
     ctx.fillRect(w/2 - 2, -h/3, 5, 16);
     ctx.fillRect(-w/2 - 3, h/4, 5, 16);
     ctx.fillRect(w/2 - 2, h/4, 5, 16);
 
-    // Main Crimson Body
     const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
     bodyGrad.addColorStop(0, '#7f1d1d');
     bodyGrad.addColorStop(0.3, '#dc2626');
@@ -574,13 +580,11 @@
     ctx.roundRect(-w/2, -h/2, w, h, [16, 16, 12, 12]);
     ctx.fill();
 
-    // Horseshoe Grille
     ctx.fillStyle = '#020617';
     ctx.beginPath();
     ctx.arc(0, -h/2 + 7, 8, 0, Math.PI);
     ctx.fill();
 
-    // Side C-Line Aerodynamic Curves
     ctx.strokeStyle = '#020617';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -590,7 +594,6 @@
     ctx.arc(w/2 - 3, 0, h/3.2, Math.PI/2, -Math.PI/2);
     ctx.stroke();
 
-    // Glass Roof Cockpit
     const roofGrad = ctx.createLinearGradient(0, -h/4, 0, h/4);
     roofGrad.addColorStop(0, '#0f172a');
     roofGrad.addColorStop(1, '#334155');
@@ -599,16 +602,13 @@
     ctx.roundRect(-w/3.2, -h/3.8, (w*2)/3.2, h/2, 8);
     ctx.fill();
 
-    // Quad LED Light Bars
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(-w/2 + 6, -h/2 + 4, 10, 3);
     ctx.fillRect(w/2 - 16, -h/2 + 4, 10, 3);
 
-    // Rear Light Bar
     ctx.fillStyle = '#ff2a6d';
     ctx.fillRect(-w/2 + 4, h/2 - 4, w - 8, 3);
 
-    // Nitro Flames
     if (stage >= 3 && boost) {
       ctx.fillStyle = '#feca57';
       ctx.beginPath();
@@ -619,7 +619,6 @@
     ctx.restore();
   }
 
-  // 3D Traffic Obstacle Rendering
   function drawObstacle3D(x, y, w, h, color) {
     ctx.save();
     ctx.translate(x, y);
@@ -744,6 +743,5 @@
   restartBtn.addEventListener('click', startStageRound);
 })();
 </script>
-
 </body>
 </html>
